@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "@near-wallet-selector/modal-ui/styles.css";
 import WalletControls from "../components/WalletControls";
 import { WalletsProvider } from "../components/wallets";
 

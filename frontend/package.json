@@ -6,13 +6,17 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs",
+    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs test/wallets.test.mjs",
     "prove": "node scripts/prove.mjs"
   },
   "dependencies": {
     "@near-wallet-selector/core": "^8.9.0",
+    "@near-wallet-selector/here-wallet": "^8.10.2",
+    "@near-wallet-selector/meteor-wallet": "^8.10.2",
     "@near-wallet-selector/modal-ui": "^8.9.0",
     "@near-wallet-selector/my-near-wallet": "^8.9.0",
+    "@near-wallet-selector/nightly": "^8.10.2",
+    "@near-wallet-selector/sender": "^8.10.2",
     "@reclaimprotocol/zk-fetch": "^1.1.0",
     "ethers": "6.17.0",
     "near-api-js": "^5.1.0",

@@ -1,0 +1,56 @@
+{
+  "_comment": "End-to-end claim fixture. Fixed test-only keys; never used outside tests.",
+  "proof": {
+    "claimInfo": {
+      "provider": "http",
+      "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-e2e\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/octocat/Hello-World/pulls/7\"}",
+      "context": "{\"extractedParameters\":{\"author\":\"octocat\",\"merged\":\"true\",\"number\":\"7\",\"repo\":\"octocat/Hello-World\"},\"providerHash\":\"0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\"}"
+    },
+    "signedClaim": {
+      "claim": {
+        "identifier": "0x3373d41d8bbf27c42c3d2f0739ea987f042ae57a626720a42bab58a8adc979d6",
+        "owner": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+        "epoch": 1,
+        "timestampS": 1794129286
+      },
+      "signatures": [
+        "0x288c073a86717715447fb7971835f8859fe1f415f93652b868dc99f24450f6ef402de3117605410fe5b219e398ec67ec72ab9ef86e2191fbd5c89421c8284c101b"
+      ]
+    }
+  },
+  "witness": "0xf035dcd755545b6cb98302532271f82a040548e0",
+  "config": {
+    "chainId": 84532,
+    "escrow": "0x1111111111111111111111111111111111111111",
+    "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "bountyId": 7,
+    "amount": "2500000000",
+    "nonce": 0,
+    "blockTimestamp": 1794129386,
+    "voucherTtlSec": 86400,
+    "bountyExpiry": 0
+  },
+  "voucher": {
+    "bountyId": 7,
+    "recipient": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+    "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+    "amount": "2500000000",
+    "nonce": 0,
+    "expiry": 1794215786,
+    "chainId": 84532,
+    "escrow": "0x1111111111111111111111111111111111111111"
+  },
+  "structHash": "0xbc4fd89f51a217668d527ff9d5b09c8b5e99cc4b1de737279d0d8a46e1c63fb2",
+  "digest": "0x66d4707226280f0e1d2049e0c25a21b0df6f367a7f4a10407c419cbb45517ac7",
+  "mpcSigner": "0xb80cc5898ce353bdac602c03a1ecf3a6a76ede92",
+  "mpcResponse": {
+    "scheme": "Secp256k1",
+    "big_r": {
+      "affine_point": "0362aca2ed8b7d613f28ade0ac18da5c71e9b465759e2129170801c498fa400efc"
+    },
+    "s": {
+      "scalar": "117f7ed80f3b4a6d234932d7843ec8a1c90b2eb1eacce75c1332d51e54951426"
+    },
+    "recovery_id": 1
+  }
+}

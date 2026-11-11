@@ -36,14 +36,22 @@ export default function SettlementPanel({
   const [scanning, setScanning] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const busy = useRef(false);
 
   useEffect(() => {
     if (!watching) return;
     const tick = async () => {
+      // A payout-log scan can outlast the 15s interval: never overlap ticks.
+      if (busy.current) return;
+      busy.current = true;
       setElapsed((e) => e + 1);
       try {
         const v = await getVoucher(bountyId);
-        if (!v) return; // still signing
+        if (!v) {
+          // Still signing (also recovers the panel if a retry follows an error).
+          setPhase({ kind: "waiting-voucher" });
+          return;
+        }
         let used: boolean | null = null;
         let payout: PayoutTx | null = null;
         try {
@@ -64,12 +72,15 @@ export default function SettlementPanel({
           used = null; // escrow unreachable; keep the voucher, retry next tick
         }
         setPhase({ kind: "voucher", voucher: v, used, payout });
-        if (used && payout) {
-          setWatching(false); // settled: stop polling
+        if (used) {
+          // Settled: stop auto-polling (a missing payout link has its own retry).
+          setWatching(false);
         }
       } catch (e) {
         setPhase({ kind: "error", message: e instanceof Error ? e.message : String(e) });
         setWatching(false);
+      } finally {
+        busy.current = false;
       }
     };
     void tick();
@@ -114,7 +125,21 @@ export default function SettlementPanel({
   }, [signedDigest]);
 
   if (phase.kind === "error") {
-    return <div className="notice">{phase.message}</div>;
+    return (
+      <div className="notice error">
+        {phase.message}
+        <div className="row" style={{ marginTop: 8 }}>
+          <button
+            onClick={() => {
+              setElapsed(0);
+              setWatching(true);
+            }}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   if (phase.kind === "waiting-voucher") {

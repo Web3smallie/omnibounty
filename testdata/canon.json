@@ -1,0 +1,74 @@
+{
+  "cases": [
+    {
+      "name": "nested",
+      "input": "{\"b\":2,\"a\":{\"d\":[3,2,1],\"c\":\"x\"}}",
+      "canonical": "{\"a\":{\"c\":\"x\",\"d\":[3,2,1]},\"b\":2}"
+    },
+    {
+      "name": "key_order",
+      "input": "{\"zzz\":1,\"aaa\":2,\"mmm\":3}",
+      "canonical": "{\"aaa\":2,\"mmm\":3,\"zzz\":1}"
+    },
+    {
+      "name": "empty_object",
+      "input": "{}",
+      "canonical": "{}"
+    },
+    {
+      "name": "empty_array",
+      "input": "{\"arr\":[]}",
+      "canonical": "{\"arr\":[]}"
+    },
+    {
+      "name": "bools_null",
+      "input": "{\"t\":true,\"f\":false,\"n\":null}",
+      "canonical": "{\"f\":false,\"n\":null,\"t\":true}"
+    },
+    {
+      "name": "ints",
+      "input": "{\"big\":9007199254740991,\"neg\":-42,\"zero\":0}",
+      "canonical": "{\"big\":9007199254740991,\"neg\":-42,\"zero\":0}"
+    },
+    {
+      "name": "unicode",
+      "input": "{\"emoji\":\"🪙é\",\"cjk\":\"賞金\"}",
+      "canonical": "{\"cjk\":\"賞金\",\"emoji\":\"🪙é\"}"
+    },
+    {
+      "name": "escapes",
+      "input": "{\"q\":\"a\\\"b\\\\c\",\"nl\":\"x\\ny\",\"tab\":\"p\\tq\",\"ctrl\":\"\\u0001\\u001f\"}",
+      "canonical": "{\"ctrl\":\"\\u0001\\u001f\",\"nl\":\"x\\ny\",\"q\":\"a\\\"b\\\\c\",\"tab\":\"p\\tq\"}"
+    },
+    {
+      "name": "deep",
+      "input": "{\"l1\":{\"l2\":{\"l3\":{\"l4\":{\"v\":\"deep\"}}}}}",
+      "canonical": "{\"l1\":{\"l2\":{\"l3\":{\"l4\":{\"v\":\"deep\"}}}}}"
+    },
+    {
+      "name": "array_of_objects",
+      "input": "{\"items\":[{\"b\":1,\"a\":2},{\"d\":4,\"c\":3}]}",
+      "canonical": "{\"items\":[{\"a\":2,\"b\":1},{\"c\":3,\"d\":4}]}"
+    },
+    {
+      "name": "exponent_int",
+      "input": "{\"v\":1000000}",
+      "canonical": "{\"v\":1000000}"
+    },
+    {
+      "name": "float_int_valued",
+      "input": "{\"v\":42}",
+      "canonical": "{\"v\":42}"
+    },
+    {
+      "name": "string_numbers",
+      "input": "{\"v\":\"007\",\"w\":\"1e3\"}",
+      "canonical": "{\"v\":\"007\",\"w\":\"1e3\"}"
+    },
+    {
+      "name": "duplicate_keys_last_wins",
+      "input": "{\"b\":1,\"a\":2,\"b\":3}",
+      "canonical": "{\"a\":2,\"b\":3}"
+    }
+  ]
+}

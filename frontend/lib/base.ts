@@ -198,21 +198,27 @@ export async function findPayoutTx(
   }
   const chunks = chunkRanges(from, latest, PAYOUT_MAX_CHUNKS) as Array<[number, number]>;
   const bountyTopic = `0x${bountyId.toString(16).padStart(64, "0")}`;
+  // One slow/flaky chunk must not discard a whole scan: retry once, then fail loud.
+  const fetchChunk = async (s: number, e: number): Promise<unknown[]> => {
+    const params = [
+      {
+        fromBlock: toHexBlock(s),
+        toBlock: toHexBlock(e),
+        address: config.escrowAddress,
+        topics: [VOUCHER_CLAIMED_TOPIC, bountyTopic],
+      },
+    ];
+    try {
+      return await ethRpc<unknown[]>("eth_getLogs", params);
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+      return await ethRpc<unknown[]>("eth_getLogs", params);
+    }
+  };
   let scanned = 0;
   for (let i = 0; i < chunks.length; i += SCAN_BATCH) {
     const batch = chunks.slice(i, i + SCAN_BATCH);
-    const results = await Promise.all(
-      batch.map(([s, e]) =>
-        ethRpc<unknown[]>("eth_getLogs", [
-          {
-            fromBlock: toHexBlock(s),
-            toBlock: toHexBlock(e),
-            address: config.escrowAddress,
-            topics: [VOUCHER_CLAIMED_TOPIC, bountyTopic],
-          },
-        ])
-      )
-    );
+    const results = await Promise.all(batch.map(([s, e]) => fetchChunk(s, e)));
     scanned += batch.length;
     opts?.onProgress?.(scanned, chunks.length);
     for (const logs of results) {

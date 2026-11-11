@@ -1,0 +1,53 @@
+# Local-only caches and build output (never committed)
+.npm-cache/
+.cargo-home/
+.rustup/
+.home/
+.tool-bin/
+node_modules/
+target/
+.pytest_cache/
+__pycache__/
+
+# JS/Next build output
+frontend/.next/
+frontend/out/
+relayer/relayer-state.json
+relayer/test/.tmp/
+
+# Rust
+contracts/near/target/
+contracts/near/tests/mock-mpc/target/
+contracts/near/fetch*.log
+contracts/near/test.log
+contracts/near/Cargo.lock.committed
+contracts/near/Cargo.lock.bak
+contracts/near/Cargo.lock.mirror
+contracts/near/tests/mock-mpc/Cargo.lock.mirror
+.link-temp/
+.crate-inspect/
+**/*.rs.bk
+*.pdb
+
+# Foundry
+contracts/base/out/
+contracts/base/cache/
+contracts/base/broadcast/
+contracts/base/build.log
+contracts/base/test.log
+contracts/base/lib/
+
+# Local cargo sandbox workaround (rebuilt by tools/local_registry.py)
+vendor/
+contracts/near/.cargo/
+
+# Secrets and local env
+.env
+.env.local
+frontend/.env.local
+proof.json
+*.pem
+*.key
+secrets/
+.near-credentials/
+contracts/near/.near-credentials/

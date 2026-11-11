@@ -1,0 +1,4 @@
+{
+  "summary": "Patch crypto.randomBytes via Object.defineProperty",
+  "updatedAt": "2026-11-08T09:10:42.043513600Z"
+}

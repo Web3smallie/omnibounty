@@ -79,7 +79,7 @@ export default async function Home() {
             </div>
             <div className="stat">
               <span className="stat-num">{formatUsdc(paidOut.toString())}</span>
-              <span className="stat-label">USDC paid to contributors</span>
+              <span className="stat-label">USDC claimed by contributors</span>
             </div>
           </section>
           <Marketplace bounties={bounties!} />

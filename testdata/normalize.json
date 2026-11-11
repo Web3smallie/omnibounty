@@ -1,0 +1,177 @@
+{
+  "_comment": "expected=null means the input MUST be rejected.",
+  "identifier": [
+    {
+      "input": "0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": "94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "reason": "sdk-native prefixed"
+    },
+    {
+      "input": "94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": "94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "reason": "already canonical"
+    },
+    {
+      "input": "0x94BB12417065A93C36CDF75539D16C0A25F707B882F4EA2B0B69272254357175",
+      "expected": "94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "reason": "upper hex"
+    },
+    {
+      "input": "0X94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": "94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "reason": "capital prefix"
+    },
+    {
+      "input": "0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b6927225435717",
+      "expected": null,
+      "reason": "short"
+    },
+    {
+      "input": "0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b6927225435717500",
+      "expected": null,
+      "reason": "long"
+    },
+    {
+      "input": "0x0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": null,
+      "reason": "double prefix"
+    },
+    {
+      "input": "0xzzbb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": null,
+      "reason": "non-hex"
+    },
+    {
+      "input": " 0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175",
+      "expected": null,
+      "reason": "whitespace"
+    },
+    {
+      "input": "0x94bb12417065a93c36cdf75539d16c0a25f707b882f4ea2b0b69272254357175 ",
+      "expected": null,
+      "reason": "trailing space"
+    },
+    {
+      "input": "",
+      "expected": null,
+      "reason": "empty"
+    },
+    {
+      "input": "0x",
+      "expected": null,
+      "reason": "prefix only"
+    }
+  ],
+  "owner": [
+    {
+      "input": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "expected": "cb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "reason": "sdk-native"
+    },
+    {
+      "input": "cb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "expected": "cb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "reason": "canonical"
+    },
+    {
+      "input": "0xCb234C6FC8aBE3Eb38e31eEc6288B431E313d9b9",
+      "expected": "cb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "reason": "checksummed case"
+    },
+    {
+      "input": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b",
+      "expected": null,
+      "reason": "short"
+    },
+    {
+      "input": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b911",
+      "expected": null,
+      "reason": "long"
+    },
+    {
+      "input": "0x0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "expected": null,
+      "reason": "double prefix"
+    },
+    {
+      "input": "",
+      "expected": null,
+      "reason": "empty"
+    }
+  ],
+  "signature": [
+    {
+      "input": "0xe1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "expected": "e1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "reason": "sdk-native"
+    },
+    {
+      "input": "e1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "expected": "e1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "reason": "canonical"
+    },
+    {
+      "input": "0xE1FD48C836B97EEA98ED877803164BBD04CFCDE0722F0198C8252F7D9A1278CA648A7A9289898FDB80ADE7E6DE733F62B5FFED9293AA6586B9B19B43502038591C",
+      "expected": "e1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "reason": "upper hex"
+    },
+    {
+      "input": "0xe1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b4350203859",
+      "expected": null,
+      "reason": "short"
+    },
+    {
+      "input": "0xe1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c00",
+      "expected": null,
+      "reason": "long"
+    },
+    {
+      "input": "0x0xe1fd48c836b97eea98ed877803164bbd04cfcde0722f0198c8252f7d9a1278ca648a7a9289898fdb80ade7e6de733f62b5ffed9293aa6586b9b19b43502038591c",
+      "expected": null,
+      "reason": "double prefix"
+    },
+    {
+      "input": "",
+      "expected": null,
+      "reason": "empty"
+    }
+  ],
+  "recoveryId": [
+    {
+      "v": 27,
+      "expected": 0
+    },
+    {
+      "v": 28,
+      "expected": 1
+    },
+    {
+      "v": 0,
+      "expected": 0
+    },
+    {
+      "v": 1,
+      "expected": 1
+    },
+    {
+      "v": 2,
+      "expected": null
+    },
+    {
+      "v": 3,
+      "expected": null
+    },
+    {
+      "v": 29,
+      "expected": null
+    },
+    {
+      "v": 30,
+      "expected": null
+    },
+    {
+      "v": 255,
+      "expected": null
+    }
+  ]
+}

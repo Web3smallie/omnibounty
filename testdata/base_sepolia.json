@@ -1,0 +1,18 @@
+{
+  "_comment": "OmniBounty Base Sepolia escrow record (no secrets). Immutable deployment, no proxy.",
+  "network": "base-sepolia",
+  "chainId": 84532,
+  "escrow": "0xee5C8F3154fed8B9B2f5D820AC687fDfa8CF2C99",
+  "deployTx": "0xd88d511e43c72aa30f55709df142b009b6158c62a8373d95b9c29947bb00e553",
+  "blockNumber": 56458964,
+  "deployer": "0x6528AeF6855FBeCFf88aA92BcAd3b05C64183133",
+  "mpcSigner": "0xc83b76aEf4dB9a14FCd4abCcEB99b0fC27ebb3cC",
+  "kdfCheck": "MATCH",
+  "nearContract": "omnibounty.testnet",
+  "signerNote": "mpcSigner/nearContract above are the ORIGINAL deployment values (V1 era). The escrow owner later rotated the signer to the V2 MPC signer 0x73dfe93ac7024492b21c5ca8d6f301ea978abb82 via setMpcSigner (tx 0xa2941d9665a232ce15f66c60c7b05ed7d45ba0c15811674583f83e512aee5a60, block 57072584; current mpcSigner() re-verified read-only 2026-11-11). For live values see testdata/production_testnet.json. No test or script reads these two fields; deploy_escrow.mjs --force regenerates this file on redeploy.",
+  "voucherPath": "omnibounty-voucher-v1",
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "domainSeparator": "0x2c7a9afa129704a9a934a8b7a1a45caebe7909238c3e581c6a203aa8b669073b",
+  "bytecodeSha256": "0xdb2245e9748d26a17ff6d7b03a9efc1fd6a2b828989718d21c023ad6cbbca77f",
+  "deployedAt": "2026-11-09T08:41:03.816Z"
+}

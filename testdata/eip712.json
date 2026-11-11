@@ -1,0 +1,76 @@
+{
+  "_comment": "EIP-712 fixtures. Fixed test-only key; never used outside tests.",
+  "domain": {
+    "name": "OmniBounty",
+    "version": "1",
+    "chainId": 84532,
+    "verifyingContract": "0x1111111111111111111111111111111111111111"
+  },
+  "voucherTypehash": "0xd6e33bde1cad655a2f5764a35e2642eb0cfeb06ea06b05e3019f8e798c14ffc4",
+  "domainSeparator": "0x0793eeea296dd8c75263400620bff597bd093735b4da47854924a8159d8e85dd",
+  "vouchers": [
+    {
+      "name": "standard",
+      "value": {
+        "bountyId": 7,
+        "recipient": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+        "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        "amount": "2500000000",
+        "nonce": 1,
+        "expiry": 1893456000,
+        "chainId": 84532,
+        "escrow": "0x1111111111111111111111111111111111111111"
+      },
+      "structHash": "0x2c98ef5038a9be558cdbff9423e8f09a4db59544e6664ca90904bf4cd4bfd787",
+      "digest": "0x7737a788033c7fbe1db15dcf6cebcd301247f944323d4f70bb677cc278983928",
+      "signature": {
+        "v": 27,
+        "r": "0x463db7fdfdd51badf791cb8703852718a11eb366d8bc7879bd988ba5778284e1",
+        "s": "0x28f7f0bb5b1efd0100bbbe9d5e106a8a08c059f32efa0ef6adcf57b4d69a328d"
+      },
+      "signer": "0xf035dcd755545b6cb98302532271f82a040548e0"
+    },
+    {
+      "name": "second_nonce",
+      "value": {
+        "bountyId": 7,
+        "recipient": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+        "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        "amount": "2500000000",
+        "nonce": 2,
+        "expiry": 1893456000,
+        "chainId": 84532,
+        "escrow": "0x1111111111111111111111111111111111111111"
+      },
+      "structHash": "0xd623942ee129eeaf8aa610d2672e1e882012e24a762651d089ab3cce92407b19",
+      "digest": "0x63666b7bc5f2d44b925085cac6ebfbd7d84d072c6bf1a8d4a02a1975a02de25b",
+      "signature": {
+        "v": 27,
+        "r": "0xd3455eb5cbf6cf9ead399458de17ecdfa49473d72f122316aa8701dcbdd70b63",
+        "s": "0x06a5c2dddf567b3cbaf5dc9ff8f346503205f7bc7b9a7396c7aa93a6ea4c0df6"
+      },
+      "signer": "0xf035dcd755545b6cb98302532271f82a040548e0"
+    },
+    {
+      "name": "max_amount",
+      "value": {
+        "bountyId": 1,
+        "recipient": "0x000000000000000000000000000000000000dEaD",
+        "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+        "amount": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+        "nonce": 0,
+        "expiry": 1893456000,
+        "chainId": 84532,
+        "escrow": "0x1111111111111111111111111111111111111111"
+      },
+      "structHash": "0x30dac983a99808bf24f0a30e3a000d4deed77a5c1ca21632aff46d3e7e321c9c",
+      "digest": "0x5a4d45a79c8f19c611720a850ac083301c903ccd430593d66938ea1236a6d52d",
+      "signature": {
+        "v": 28,
+        "r": "0x9dbfd0c03089787e712e1b32e6e2ae967dac32ad53e74c773b7529c24db92c05",
+        "s": "0x247086e1459eb01da439c8e47822c62ab273321d54a864c198d685b944c4cde2"
+      },
+      "signer": "0xf035dcd755545b6cb98302532271f82a040548e0"
+    }
+  ]
+}

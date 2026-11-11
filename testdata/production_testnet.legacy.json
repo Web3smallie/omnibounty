@@ -1,0 +1,30 @@
+{
+  "_comment": "OmniBounty testnet deployment record (no secrets). Key in secrets/omnibounty.testnet.json (gitignored).",
+  "network": "testnet",
+  "contract": "omnibounty.testnet",
+  "wasm": {
+    "path": "contracts/near/target/near/omnibounty.wasm",
+    "bytes": 328572,
+    "sha256": "0xabc845eacd273062f0c3c6ce9e775495547c05817bb1aa85ab977408a1f52590",
+    "abi": "contracts/near/target/near/omnibounty_abi.json"
+  },
+  "mpcContract": "v1.signer-prod.testnet",
+  "mpcVersion": "3.18.0",
+  "mpcSigner": "0xc83b76aef4db9a14fcd4abcceb99b0fc27ebb3cc",
+  "derivedKey": "secp256k1:5eT73yLUXdeGJKBtozUiwdeKJpPMrhBtVxrd8qDNowquyYRYBoPjVY8FxqvSzAJJ4xiAgvFvu3KRWdx3D5r2BefD",
+  "escrow": "0x1111111111111111111111111111111111111111",
+  "escrowNote": "Placeholder until the Base Sepolia escrow deploys; owner-updatable via set_escrow.",
+  "chainId": 84532,
+  "epoch1Witnesses": [
+    "0x244897572368eadf65bfbc5aec98d8e5443a9072"
+  ],
+  "witnessNote": "Confirmed from deployed reclaim-protocol.testnet get_epoch_by_id(1) via tools/confirm_witnesses.py.",
+  "txHashes": {
+    "deploy": "4QAMVHYTvTwSRMXFLk593ddVBDUEZwoSbdjSHxESmfDn"
+  },
+  "txNote": "Deploy tx re-verified via RPC tx-status: signer=receiver=omnibounty.testnet, DeployContract, SuccessValue. RPC returns the code field as the 32-byte sha256 abc845...=artifact hash; full 328572 bytes verified via view_code hash comparison in the resume run. Config/bounty tx hashes from the initial run were lost when it crashed before writing this file; resulting state was re-verified read-only instead.",
+  "resumed": true,
+  "resumeNote": "Re-verification run: no new transactions; setup txs from the initial run.",
+  "validationBounty": 1,
+  "negativeDryRun": "PREDICATE_FAILED"
+}

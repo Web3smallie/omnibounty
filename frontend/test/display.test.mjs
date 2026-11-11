@@ -18,6 +18,7 @@ import {
   nearAccountUrl,
   nearTxUrl,
   chunkRanges,
+  describeFetchFailure,
   shortenAddress,
   timeAgo,
 } from "../lib/display.mjs";
@@ -137,6 +138,35 @@ describe("NEAR outcome parsing", () => {
     assert.equal(extractNearTxHash(undefined), null);
     assert.equal(extractNearTxHash({}), null);
     assert.equal(extractNearTxHash({ transaction: {} }), null);
+  });
+});
+
+describe("RPC failure diagnosis", () => {
+  const URL = "https://rpc.testnet.near.org";
+
+  it("keeps the endpoint and the undici cause chain", () => {
+    const cause = new Error("getaddrinfo ENOTFOUND rpc.testnet.near.org");
+    cause.code = "ENOTFOUND";
+    const err = new Error("fetch failed");
+    err.cause = cause;
+    assert.equal(
+      describeFetchFailure(URL, err),
+      "fetch failed (https://rpc.testnet.near.org): fetch failed [cause: ENOTFOUND: getaddrinfo ENOTFOUND rpc.testnet.near.org]"
+    );
+  });
+
+  it("handles causeless errors and non-Error inputs without crashing", () => {
+    assert.equal(
+      describeFetchFailure(URL, new Error("fetch failed")),
+      "fetch failed (https://rpc.testnet.near.org): fetch failed"
+    );
+    assert.equal(
+      describeFetchFailure(URL, "boom"),
+      "fetch failed (https://rpc.testnet.near.org): boom"
+    );
+    const err = new Error("fetch failed");
+    err.cause = "socket hang up";
+    assert.ok(describeFetchFailure(URL, err).includes("[cause: socket hang up]"));
   });
 });
 

@@ -1,6 +1,7 @@
 // NEAR contract access: read-only views via plain RPC fetch, transactions
 // via wallet-selector. No keys are ever handled in this module.
 import { config } from "./config";
+import { describeFetchFailure } from "./display.mjs";
 
 export interface BountyView {
   id: number;
@@ -61,22 +62,29 @@ function utf8ToBase64(s: string): string {
 
 export async function nearView<T>(method: string, args: Record<string, unknown>): Promise<T> {
   const argsBase64 = utf8ToBase64(JSON.stringify(args));
-  const res = await fetch(config.nearRpcUrl, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: "omnibounty-web",
-      method: "query",
-      params: {
-        request_type: "call_function",
-        finality: "final",
-        account_id: config.contractId,
-        method_name: method,
-        args_base64: argsBase64,
-      },
-    }),
-  });
+  let res: Response;
+  try {
+    res = await fetch(config.nearRpcUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id: "omnibounty-web",
+        method: "query",
+        params: {
+          request_type: "call_function",
+          finality: "final",
+          account_id: config.contractId,
+          method_name: method,
+          args_base64: argsBase64,
+        },
+      }),
+    });
+  } catch (e) {
+    // Transport failure (DNS/proxy/firewall/TLS): keep the failure loud
+    // but attach the endpoint + underlying cause so it is diagnosable.
+    throw new Error(`NEAR RPC ${describeFetchFailure(config.nearRpcUrl, e)}`);
+  }
   if (!res.ok) throw new Error(`NEAR RPC HTTP ${res.status}`);
   const data = await res.json();
   if (data.error) throw new Error(`NEAR RPC: ${JSON.stringify(data.error)}`);
@@ -114,9 +122,21 @@ export function getSelector() {
       const { setupWalletSelector } = await import("@near-wallet-selector/core");
       const { setupModal } = await import("@near-wallet-selector/modal-ui");
       const { setupMyNearWallet } = await import("@near-wallet-selector/my-near-wallet");
+      const { setupMeteorWallet } = await import("@near-wallet-selector/meteor-wallet");
+      const { setupSender } = await import("@near-wallet-selector/sender");
+      const { setupNightly } = await import("@near-wallet-selector/nightly");
+      const { setupHereWallet } = await import("@near-wallet-selector/here-wallet");
       const selector = await setupWalletSelector({
         network: config.networkId,
-        modules: [setupMyNearWallet()],
+        // Every module below honors the selector network (testnet here);
+        // see frontend/test/wallets.test.mjs for the version/shape gate.
+        modules: [
+          setupMyNearWallet(),
+          setupMeteorWallet(),
+          setupSender(),
+          setupNightly(),
+          setupHereWallet(),
+        ],
       });
       const modal = setupModal(selector, { contractId: config.contractId });
       // Expose sign-in through the returned selector handle.

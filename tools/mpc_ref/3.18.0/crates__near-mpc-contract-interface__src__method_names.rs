@@ -1,0 +1,91 @@
+//! Contract method name constants for the MPC signer contract.
+//!
+//! Provides a single source of truth for method names used across the node,
+//! contract, tests, and by external callers.
+
+// User request methods
+pub const SIGN: &str = "sign";
+pub const REQUEST_APP_PRIVATE_KEY: &str = "request_app_private_key";
+pub const VERIFY_FOREIGN_TRANSACTION: &str = "verify_foreign_transaction";
+
+// Node response methods
+pub const RESPOND: &str = "respond";
+pub const RESPOND_CKD: &str = "respond_ckd";
+pub const RESPOND_VERIFY_FOREIGN_TX: &str = "respond_verify_foreign_tx";
+
+// Vote methods
+pub const VOTE_PK: &str = "vote_pk";
+pub const VOTE_RESHARED: &str = "vote_reshared";
+pub const VOTE_NEW_PARAMETERS: &str = "vote_new_parameters";
+pub const VOTE_ADD_DOMAINS: &str = "vote_add_domains";
+pub const REGISTER_FOREIGN_CHAINS_CONFIG: &str = "register_foreign_chains_config";
+pub const VOTE_MPC_NODE_MANIFEST_DIGEST: &str = "vote_mpc_node_manifest_digest";
+pub const VOTE_ADD_LAUNCHER_HASH: &str = "vote_add_launcher_hash";
+pub const VOTE_REMOVE_LAUNCHER_HASH: &str = "vote_remove_launcher_hash";
+pub const VOTE_ADD_OS_MEASUREMENT: &str = "vote_add_os_measurement";
+pub const VOTE_REMOVE_OS_MEASUREMENT: &str = "vote_remove_os_measurement";
+pub const VOTE_CANCEL_KEYGEN: &str = "vote_cancel_keygen";
+pub const VOTE_CANCEL_RESHARING: &str = "vote_cancel_resharing";
+pub const VOTE_ABORT_KEY_EVENT_INSTANCE: &str = "vote_abort_key_event_instance";
+pub const VOTE_UPDATE_FOREIGN_CHAIN_PROVIDERS: &str = "vote_update_foreign_chain_providers";
+pub const VOTE_TEE_VERIFIER_CHANGE: &str = "vote_tee_verifier_change";
+pub const WITHDRAW_TEE_VERIFIER_VOTE: &str = "withdraw_tee_verifier_vote";
+pub const VOTE_CONTRACT_UPDATE: &str = "vote_contract_update";
+pub const REMOVE_CONTRACT_UPDATE_VOTE: &str = "remove_contract_update_vote";
+pub const REMOVE_NON_PARTICIPANT_CONTRACT_UPDATE_VOTES: &str =
+    "remove_non_participant_contract_update_votes";
+
+// Protocol management
+pub const INIT: &str = "init";
+pub const INIT_RUNNING: &str = "init_running";
+pub const MIGRATE: &str = "migrate";
+pub const START_KEYGEN_INSTANCE: &str = "start_keygen_instance";
+pub const START_RESHARE_INSTANCE: &str = "start_reshare_instance";
+pub const SUBMIT_CONTRACT_UPDATE: &str = "submit_contract_update";
+pub const FAIL_ON_TIMEOUT: &str = "fail_on_timeout";
+
+// TEE / Participant
+pub const SUBMIT_PARTICIPANT_INFO: &str = "submit_participant_info";
+pub const PREPAY_ATTESTATION_STORAGE: &str = "prepay_attestation_storage";
+pub const UPDATE_PARTICIPANT_URL: &str = "update_participant_url";
+pub const VERIFY_TEE: &str = "verify_tee";
+pub const CONCLUDE_NODE_MIGRATION: &str = "conclude_node_migration";
+pub const START_NODE_MIGRATION: &str = "start_node_migration";
+pub const CANCEL_NODE_MIGRATION: &str = "cancel_node_migration";
+pub const REGISTER_BACKUP_SERVICE: &str = "register_backup_service";
+pub const CLEAN_TEE_STATUS: &str = "clean_tee_status";
+pub const CLEAN_INVALID_ATTESTATIONS: &str = "clean_invalid_attestations";
+
+// Callbacks (used in promise_yield_create and indexed by the node)
+pub const RETURN_SIGNATURE_AND_CLEAN_STATE_ON_SUCCESS: &str =
+    "return_signature_and_clean_state_on_success";
+pub const RETURN_CK_AND_CLEAN_STATE_ON_SUCCESS: &str = "return_ck_and_clean_state_on_success";
+pub const RETURN_VERIFY_FOREIGN_TX_AND_CLEAN_STATE_ON_SUCCESS: &str =
+    "return_verify_foreign_tx_and_clean_state_on_success";
+
+// View methods
+pub const STATE: &str = "state";
+pub const CONFIG: &str = "config";
+pub const PUBLIC_KEY: &str = "public_key";
+pub const DERIVED_PUBLIC_KEY: &str = "derived_public_key";
+pub const VERSION: &str = "version";
+pub const CONTRACT_UPDATE_VOTES: &str = "contract_update_votes";
+pub const GET_PENDING_REQUEST: &str = "get_pending_request";
+pub const GET_PENDING_CKD_REQUEST: &str = "get_pending_ckd_request";
+pub const GET_PENDING_VERIFY_FOREIGN_TX_REQUEST: &str = "get_pending_verify_foreign_tx_request";
+pub const GET_TEE_ACCOUNTS: &str = "get_tee_accounts";
+pub const AVAILABLE_ATTESTATION_GRANTS: &str = "available_attestation_grants";
+pub const TEE_VERIFIER_ACCOUNT_ID: &str = "tee_verifier_account_id";
+pub const TEE_VERIFIER_VOTES: &str = "tee_verifier_votes";
+pub const GET_ATTESTATION: &str = "get_attestation";
+pub const GET_AVAILABLE_FOREIGN_CHAINS: &str = "get_available_foreign_chains";
+pub const GET_FOREIGN_CHAINS_CONFIGS: &str = "get_foreign_chains_configs";
+pub const ALLOWED_FOREIGN_CHAIN_PROVIDERS: &str = "allowed_foreign_chain_providers";
+pub const ALLOWED_DOCKER_IMAGE_HASHES: &str = "allowed_docker_image_hashes";
+pub const ALLOWED_LAUNCHER_COMPOSE_HASHES: &str = "allowed_launcher_compose_hashes";
+pub const ALLOWED_LAUNCHER_IMAGE_HASHES: &str = "allowed_launcher_image_hashes";
+pub const LAUNCHER_HASH_VOTES: &str = "launcher_hash_votes";
+pub const MPC_NODE_MANIFEST_DIGEST_VOTES: &str = "mpc_node_manifest_digest_votes";
+pub const OS_MEASUREMENT_VOTES: &str = "os_measurement_votes";
+pub const ALLOWED_OS_MEASUREMENTS: &str = "allowed_os_measurements";
+pub const MIGRATION_INFO: &str = "migration_info";

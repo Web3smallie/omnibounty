@@ -1,0 +1,55 @@
+[package]
+name = "omnibounty"
+description = "OmniBounty NEAR contract: pinned Reclaim proof verification, bounty registry, replay-safe claims, EIP-712 voucher digests, Chain Signatures (MPC) payout authorization."
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+near-sdk = "5.1.0"
+# `derive` + `unstable__schema` for BorshSchema on ABI-surface types.
+# Same feature set near-sdk's own `__abi-generate` enables for cargo-near
+# ABI generation; schema impls are dead code in wasm (stripped by LTO).
+borsh = { version = "1", features = ["derive", "unstable__schema"] }
+hex = "0.4"
+# Recovery only. This feature subset of the reference integration's set keeps
+# resolution inside the pinned tree (notably: no spki/pkcs8 edge).
+k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+# JsonSchema on proof-input types (cargo-near ABI generation).
+schemars = "0.8"
+# Cross-contract suite ONLY (tests/cross_contract.rs, feature `xsuite`).
+# Optional regular deps (cargo forbids optional dev-deps): never enabled for
+# the wasm build. Exact pins match the seed lock for offline resolution.
+# Gated because near-workspaces downloads a sandbox binary at BUILD time,
+# which fails on Windows and needs network; plain `cargo test` stays
+# hermetic without it. The xsuite tree needs a newer rustc than the pinned
+# 1.86.0 (edition-2024 deps), so reviewers run it with stable Rust:
+# `cargo +stable test --features xsuite` (wasms still built with 1.86.0).
+anyhow = { version = "=1.0.86", optional = true }
+near-workspaces = { version = "=0.21.0", optional = true }
+tokio = { version = "=1.38.0", features = ["macros", "rt-multi-thread"], optional = true }
+
+[dev-dependencies]
+near-sdk = { version = "5.1.0", features = ["unit-testing"] }
+serde_json = "1"
+
+[features]
+# Full gate (unit + cross-contract): cargo test --features xsuite
+xsuite = ["dep:anyhow", "dep:near-workspaces", "dep:tokio"]
+
+[[test]]
+name = "cross_contract"
+path = "tests/cross_contract.rs"
+required-features = ["xsuite"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

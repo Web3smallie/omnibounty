@@ -4,6 +4,26 @@
 // data must never be formatted here — this module only presents values
 // that came from the NEAR contract, the Base escrow, or the user's proof.
 
+// -- RPC failure diagnosis -------------------------------------------------
+/// Render a fetch-level RPC failure with its underlying cause. Node's
+/// undici fetch reports transport problems (DNS, proxy, firewall, TLS,
+/// refused/reset connections) as a bare "fetch failed" TypeError with the
+/// real reason on `cause` — surfacing it is the difference between a
+/// diagnosable error and a mystery. Pure: no network.
+export function describeFetchFailure(url, error) {
+  const base =
+    error instanceof Error ? error.message : typeof error === "string" ? error : String(error);
+  const cause = error instanceof Error ? error.cause : undefined;
+  let detail = "";
+  if (cause instanceof Error) {
+    const code = typeof cause.code === "string" ? `${cause.code}: ` : "";
+    detail = ` [cause: ${code}${cause.message}]`;
+  } else if (cause !== undefined && cause !== null) {
+    detail = ` [cause: ${String(cause)}]`;
+  }
+  return `fetch failed (${url}): ${base}${detail}`;
+}
+
 // -- Money ---------------------------------------------------------------
 
 /// Format USDC base units (6 decimals) for display: "1000000" -> "1.00",

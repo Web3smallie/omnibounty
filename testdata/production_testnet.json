@@ -1,0 +1,40 @@
+{
+  "_comment": "OmniBounty testnet deployment record (no secrets). Key in secrets/v2.omnibounty.testnet.json (gitignored).",
+  "network": "testnet",
+  "contract": "v2.omnibounty.testnet",
+  "wasm": {
+    "path": "contracts/near/target/near/omnibounty.wasm",
+    "bytes": 330952,
+    "sha256": "0xe7fc3e00e54f57dc6911a6c77b97ce89d4677530006cae6349246dbacb7aba98",
+    "abi": "contracts/near/target/near/omnibounty_abi.json"
+  },
+  "mpcContract": "v1.signer-prod.testnet",
+  "mpcVersion": "3.18.0",
+  "mpcSigner": "0x73dfe93ac7024492b21c5ca8d6f301ea978abb82",
+  "derivedKey": "secp256k1:2iVxELR8UHYMKmiuyi6SbQGwMcejVQzmijGTyVuX4fy6pJBEJDyWrkQNfDGJ2uMoLiKc2FMm7yCGQ7rvfoeMb1RN",
+  "escrow": "0xee5C8F3154fed8B9B2f5D820AC687fDfa8CF2C99",
+  "escrowNote": "Real Base Sepolia escrow, wired at deploy time.",
+  "chainId": 84532,
+  "epoch1Witnesses": [
+    "0x244897572368eadf65bfbc5aec98d8e5443a9072"
+  ],
+  "witnessNote": "Confirmed from deployed reclaim-protocol.testnet get_epoch_by_id(1) via tools/confirm_witnesses.py.",
+  "txHashes": {
+    "create": "DJqHkSu5DN355AaQsHXqjyVc3XSD83iaANL23QxSjAnU",
+    "deploy": "8xHyR2VWYA9a6ozUreyf3GRts7BN5yutd7crqRn2s7gC",
+    "new": "3DusF23biCZfsa8WDK3Ecao4JSJNh3TrcMrWB3bKyNiD",
+    "upsert_epoch": "DushxNzYuPLA3c3eBeUo2TEuV4fUmphKgMucZpiYMdxx",
+    "set_mpc_signer": "EkVdGvzT2JGXbsi4Jq9qySNwfta6pvmG9L9sR6ZoqdRA",
+    "set_freshness": "5ekLmEr5qNLkxj44uEmrKxcyoaQwUjL1dfapMsUbBWcK",
+    "create_bounty": "HkaeQE4eyBTBjxTCkFpCJqTbKUX85EbaFQxcaSy955RS"
+  },
+  "resumed": true,
+  "resumeNote": "Re-verification run: no new transactions.",
+  "validationBounty": 1,
+  "negativeDryRun": "PREDICATE_FAILED",
+  "supersedes": {
+    "contract": "omnibounty.testnet",
+    "record": "testdata/production_testnet.legacy.json",
+    "reason": "v1 retired (bounty #3 wedged pre-fix); v1 state preserved untouched for recovery."
+  }
+}

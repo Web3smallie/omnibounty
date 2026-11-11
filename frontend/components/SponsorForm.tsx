@@ -95,14 +95,21 @@ export default function SponsorForm() {
         );
       }
     } catch (e) {
-      if (errors.length === 0) setErrors([e instanceof Error ? e.message : String(e)]);
+      // Always surface preflight failures (never condition on stale render state).
+      setErrors([e instanceof Error ? e.message : String(e)]);
       setBusy(false);
       setPhase("edit");
       return;
     }
 
     // Step 1: NEAR create_bounty.
-    const firstPending = steps.findIndex((s) => s.status !== "done");
+    let firstPending = steps.findIndex((s) => s.status !== "done");
+    if (firstPending === -1) {
+      // All steps done (e.g. user pressed submit again): start a fresh run
+      // instead of re-entering step guards that assume an unfinished flow.
+      setSteps(STEP_LABELS.map(() => ({ status: "idle" as const })));
+      firstPending = 0;
+    }
     try {
       if (firstPending <= 0) {
         setStep(0, { status: "pending", note: "Confirm in your NEAR wallet…" });
