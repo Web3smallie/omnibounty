@@ -1,0 +1,29 @@
+{
+  "name": "omnibounty-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs",
+    "prove": "node scripts/prove.mjs"
+  },
+  "dependencies": {
+    "@near-wallet-selector/core": "^8.9.0",
+    "@near-wallet-selector/modal-ui": "^8.9.0",
+    "@near-wallet-selector/my-near-wallet": "^8.9.0",
+    "@reclaimprotocol/zk-fetch": "^1.1.0",
+    "ethers": "6.17.0",
+    "near-api-js": "^5.1.0",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.7.0"
+  }
+}
