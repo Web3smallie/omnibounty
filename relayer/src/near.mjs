@@ -38,6 +38,10 @@ export class NearRpc {
     return this.callFunction(contractId, "list_unrelayed", { limit });
   }
 
+  getBounty(contractId, bountyId) {
+    return this.callFunction(contractId, "get_bounty", { bounty_id: bountyId });
+  }
+
   getConfig(contractId) {
     return this.callFunction(contractId, "get_config", {});
   }

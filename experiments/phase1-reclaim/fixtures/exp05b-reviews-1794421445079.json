@@ -1,0 +1,26 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp05/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"user\\\":\\\\{\\\"login\\\":\\\"(?<reviewer>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"state\\\":\\\"(?<review_state>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"commit_id\\\":\\\"(?<review_commit>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132/reviews?per_page=100\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421444,
+    "context": "{\"extractedParameters\":{\"review_commit\":\"5621284babc44ced80598504e7aae22f75fb32c1\",\"review_state\":\"APPROVED\",\"reviewer\":\"rickhanlonii\"},\"providerHash\":\"0x07b0d787985afd86dff67c70ff94cda77d9f92c4a4fe518351a79a5758330b37\"}",
+    "identifier": "0xc45a7acc72da52c2e4c3cd261ffed018daf60a66168455a66337e4fe8d8588c1",
+    "epoch": 1
+  },
+  "identifier": "0xc45a7acc72da52c2e4c3cd261ffed018daf60a66168455a66337e4fe8d8588c1",
+  "signatures": [
+    "0x38feca491d297cd6b6a88efd28cf0f5726e0f04d47d5aca6fd0c9cd2d4fd50563bafcf5d1a4bc284b8b05673e8b5a51f2f3c0e3bc786c9ba5a98b2929681c61f1c"
+  ],
+  "extractedParameterValues": {
+    "review_commit": "5621284babc44ced80598504e7aae22f75fb32c1",
+    "review_state": "APPROVED",
+    "reviewer": "rickhanlonii"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp04/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"filename\\\":\\\"(?<file0>.*?)\\\",\\\"status\\\":\\\"(?<status0>.*?)\\\",\\\"additions\\\":(?<add0>.*?),\\\"deletions\\\":(?<del0>.*?)[,}]\"},{\"type\":\"contains\",\"value\":\"let waitForAll;\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132/files?per_page=100\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421317,
+    "context": "{\"extractedParameters\":{\"add0\":\"93\",\"del0\":\"0\",\"file0\":\"packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js\",\"status0\":\"modified\"},\"providerHash\":\"0x3a0a975498bc4a325852df6c21ecae5c7f0789bf22be41d4353bb797b47224d8\"}",
+    "identifier": "0x0150c19976e5e799c21cd6d64c2dd1e12d70761b9e776251fee83e1a99447ea7",
+    "epoch": 1
+  },
+  "identifier": "0x0150c19976e5e799c21cd6d64c2dd1e12d70761b9e776251fee83e1a99447ea7",
+  "signatures": [
+    "0x8273e3a9d30ca6cd83a6766a1b6623862e673d9700a415f2753698e1c811629e055b20ccb3617e114d6d1f277091d1c0c2de6838ac14cfeb744233cede5c71431b"
+  ],
+  "extractedParameterValues": {
+    "add0": "93",
+    "del0": "0",
+    "file0": "packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js",
+    "status0": "modified"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

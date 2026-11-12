@@ -1,0 +1,30 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp02/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"author_association\\\":\\\"(?<author_association>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"base\\\":\\\\{[\\\\s\\\\S]*?\\\"sha\\\":\\\"(?<base_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794420998,
+    "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"author_association\":\"COLLABORATOR\",\"base_sha\":\"5b6109643a00e2681499234fd328d16c966deae4\",\"head_sha\":\"5621284babc44ced80598504e7aae22f75fb32c1\",\"merged\":\"true\",\"number\":\"38132\",\"repo\":\"react/react\"},\"providerHash\":\"0x654c5512a0038a2e9762de48674450ac5bdef18ac932be96a011e7f33a54c02b\"}",
+    "identifier": "0xce34767ee7903c9f6dad12c9071ea9ef31186e06a0dc67b56cfbbc6f9bfa77a6",
+    "epoch": 1
+  },
+  "identifier": "0xce34767ee7903c9f6dad12c9071ea9ef31186e06a0dc67b56cfbbc6f9bfa77a6",
+  "signatures": [
+    "0x31e3dcebb335a1949bff9551cc417c1cc96d998063a795fc82cd4c3eb0badafd1e3f3f9e8319f087c7a215e916e5fb46e3ad97392c14e03ca3b35711e27cbd141c"
+  ],
+  "extractedParameterValues": {
+    "author": "acdlite",
+    "author_association": "COLLABORATOR",
+    "base_sha": "5b6109643a00e2681499234fd328d16c966deae4",
+    "head_sha": "5621284babc44ced80598504e7aae22f75fb32c1",
+    "merged": "true",
+    "number": "38132",
+    "repo": "react/react"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

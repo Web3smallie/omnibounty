@@ -41,4 +41,16 @@ describe("near rpc", () => {
     const bad3 = new NearRpc("http://u", fakeFetch(async () => ({ ok: true, json: async () => ({}) })));
     await assert.rejects(() => bad3.getConfig("c"), /missing result/);
   });
+
+  it("fetches a bounty by id", async () => {
+    const fetchImpl = fakeFetch(async (url, body) => {
+      assert.equal(body.params.method_name, "get_bounty");
+      assert.deepEqual(JSON.parse(Buffer.from(body.params.args_base64, "base64").toString()), {
+        bounty_id: 7,
+      });
+      return rpcResult({ id: 7, funded: true });
+    });
+    const rpc = new NearRpc("http://unused", fetchImpl);
+    assert.deepEqual(await rpc.getBounty("v3.omnibounty.testnet", 7), { id: 7, funded: true });
+  });
 });

@@ -45,6 +45,12 @@ export function loadConfig(env = process.env) {
   const confirmations = Number(opt("CONFIRMATIONS", "2"));
   const maxAttempts = Number(opt("MAX_ATTEMPTS", "5"));
   const statePath = opt("STATE_PATH", "./relayer-state.json");
+  // Voucher protocol version: "1" (V2 escrow, default — preserves existing
+  // deployments with zero config change) or "2" (V3 escrow / VoucherV2).
+  const voucherVersion = opt("VOUCHER_VERSION", "1");
+  if (voucherVersion !== "1" && voucherVersion !== "2") {
+    throw new Error("invalid VOUCHER_VERSION: want 1 or 2");
+  }
   if (!Number.isFinite(pollIntervalMs) || pollIntervalMs < 1000) {
     throw new Error("invalid POLL_INTERVAL_MS");
   }
@@ -66,6 +72,7 @@ export function loadConfig(env = process.env) {
     confirmations,
     maxAttempts,
     statePath,
+    voucherVersion,
   };
 }
 
@@ -81,5 +88,6 @@ export function summarize(cfg) {
     expectedChainId: cfg.expectedChainId.toString(),
     pollIntervalMs: cfg.pollIntervalMs,
     confirmations: cfg.confirmations,
+    voucherVersion: cfg.voucherVersion,
   };
 }

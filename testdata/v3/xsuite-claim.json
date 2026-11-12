@@ -1,0 +1,231 @@
+{
+  "bounty_id": 7,
+  "bundles": {
+    "a": [
+      {
+        "evidence_type": 1,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"head_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"merged\":\"true\",\"number\":\"100\",\"repo\":\"react/react\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/100\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0xf17cda1df0cacb4aad3c5b9ae27f384f57902a1ee050b3813e7f6a024868ecf0",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x9af6d8e6f55989db8029c99914aa685ee9cfac0b4c0b596d0ac2c6a77721280c1919054d2e40d41ea93660d23dd04ba1c25d17dd67985f7c0629490a318792211b"
+            ]
+          }
+        }
+      },
+      {
+        "evidence_type": 2,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-10-26T20:17:50Z\",\"conclusion\":\"success\",\"head_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x74b2a92ca28f1639b263f6bc46af8c12cffd2279df60e401a3bbf4352363f708",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x527f565bc20d93d524d1a27b5c4c655f29ef056263783e8fc4004202485c4885098282109d00746bf3f1ef494f4c9d37cbe9a8eb040944f51579d02a68fcc6051b"
+            ]
+          }
+        }
+      }
+    ],
+    "b": [
+      {
+        "evidence_type": 1,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"head_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"merged\":\"true\",\"number\":\"101\",\"repo\":\"react/react\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/101\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0xcc8002e17a0b301f122083dd489906473c486752ae4304fe7876f4861f28f05b",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0xce383dd3b39fbd1a0522e00ebf2d7f0c132f297af696c589f3f09c675f79b1c11088e945eb1bc2c504da10057ccbdda4451a85f739757faaa24207a50dd3a12c1b"
+            ]
+          }
+        }
+      },
+      {
+        "evidence_type": 2,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-10-26T20:17:50Z\",\"conclusion\":\"success\",\"head_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x90e76cecf895af3c0109d677b103c32886f2016768cf6915aa45b197a2c10796",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x088242394540c5d9f627a5f10df9fc97d0ec4db44a9a7147cb2a855cb2b6431a15eed39600ce83354dc11032b5c9fcbab6052627a0c92079ca40ab51508425381c"
+            ]
+          }
+        }
+      }
+    ],
+    "c": [
+      {
+        "evidence_type": 1,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"head_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"merged\":\"true\",\"number\":\"100\",\"repo\":\"react/react\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/100\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x8974a222ecbeba98952aa2871f3f470a1387acba3ae71214a06794cf26411792",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0xa17b3b4f3ed4fc798b1cce8bad8688aa105cf7528eb560e9b241c86187dc90aa522dba27f0ee86beef2806e48e63dc8e4cdb1a88eb0a75988a585049b931be251c"
+            ]
+          }
+        }
+      },
+      {
+        "evidence_type": 2,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-10-26T20:17:50Z\",\"conclusion\":\"success\",\"head_sha\":\"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x90e76cecf895af3c0109d677b103c32886f2016768cf6915aa45b197a2c10796",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x088242394540c5d9f627a5f10df9fc97d0ec4db44a9a7147cb2a855cb2b6431a15eed39600ce83354dc11032b5c9fcbab6052627a0c92079ca40ab51508425381c"
+            ]
+          }
+        }
+      }
+    ],
+    "d": [
+      {
+        "evidence_type": 1,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"head_sha\":\"cccccccccccccccccccccccccccccccccccccccc\",\"merged\":\"true\",\"number\":\"102\",\"repo\":\"react/react\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/102\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x88a3d64c9faa2bf131f0a803dbee942ca0c70c5767429f0896de77e8c9671237",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0xda63c33d8b0f836f5db9c442d44ce901b1c9469bafe4f8020ba3cad106c1253239a9cffc588de0c7ee430b31a38f2ed4bc54f747f33f76f25c14f64f16e0fc1e1b"
+            ]
+          }
+        }
+      },
+      {
+        "evidence_type": 2,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-10-26T20:17:50Z\",\"conclusion\":\"success\",\"head_sha\":\"cccccccccccccccccccccccccccccccccccccccc\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x95bbf882113dc3052833cc69c733962f7a3fbdc3dceb11e3390a5b37e4c330d7",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x30dd8100c5ca21973116a8e1aefef64d296c18483156bec01f97138f4767fdf950ea723ede976601218fba3687f2fec122499b2b4a2536211433c5f66e1381e81c"
+            ]
+          }
+        }
+      }
+    ],
+    "e": [
+      {
+        "evidence_type": 1,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"head_sha\":\"dddddddddddddddddddddddddddddddddddddddd\",\"merged\":\"true\",\"number\":\"103\",\"repo\":\"react/react\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/103\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x376b81bd4a902a759b9bdbcd03d1a3efe95356cb3b44cd3478fa1da9236cafa8",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x95624d05ebe3b822621c8a5be4d7ceaa1823fac58028574b69c1cb02f541536a23ab66d38d56bb610af7dd2777c06edc2423e60846d43e208aea3441c2abfece1c"
+            ]
+          }
+        }
+      },
+      {
+        "evidence_type": 2,
+        "proof": {
+          "claimInfo": {
+            "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-10-26T20:17:50Z\",\"conclusion\":\"success\",\"head_sha\":\"dddddddddddddddddddddddddddddddddddddddd\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x1234\"}",
+            "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-test/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+            "provider": "http"
+          },
+          "signedClaim": {
+            "claim": {
+              "epoch": 1,
+              "identifier": "0x52c3fa4587451ecfe3f8744e4d52cbb64d58d9fa4903ab816e1adb505e03e3ad",
+              "owner": "0x1111111111111111111111111111111111111111",
+              "timestampS": 1794475009
+            },
+            "signatures": [
+              "0x9e6020ee1b3c7202007e69178372ca9e4bd9ce127eeeffd2e796a3cb5a39cc07247a1773fcc16f6939003c6196a25da434c98ef0ac8b8981ebf635b9040842271b"
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "criteria": "{\"allow_forks\":true,\"challenge_window_sec\":\"0\",\"checks\":{\"required\":[{\"apps\":[\"github-actions\"],\"name\":\"cleanup\"}]},\"deadline\":\"0\",\"description\":\"Land react/react#38132 (or any PR against react/react) with the cleanup check green on the PR head SHA. CI-verified policy: merge is not required.\",\"evidence_max_age_sec\":\"604800\",\"identity_policy\":\"open\",\"merge_policy\":\"ci_verified\",\"policy\":\"ordered_slots\",\"repo\":\"react/react\",\"schema\":\"omnibounty/criteria\",\"slots\":[{\"amount\":\"600000\"},{\"amount\":\"400000\"},{\"amount\":\"300000\"}],\"title\":\"Green CI on the deferred-value fix\",\"unfilled\":\"refund_sponsor\",\"version\":\"1\"}",
+  "criteria_windowed": "{\"allow_forks\":true,\"challenge_window_sec\":\"3600\",\"checks\":{\"required\":[{\"apps\":[\"github-actions\"],\"name\":\"cleanup\"}]},\"deadline\":\"0\",\"description\":\"Land react/react#38132 (or any PR against react/react) with the cleanup check green on the PR head SHA. CI-verified policy: merge is not required.\",\"evidence_max_age_sec\":\"604800\",\"identity_policy\":\"open\",\"merge_policy\":\"ci_verified\",\"policy\":\"single_winner\",\"repo\":\"react/react\",\"schema\":\"omnibounty/criteria\",\"slots\":[{\"amount\":\"600000\"}],\"title\":\"Green CI on the deferred-value fix\",\"unfilled\":\"refund_sponsor\",\"version\":\"1\"}",
+  "epoch": 1,
+  "generated_at": 1794475009,
+  "recipient": "0x1111111111111111111111111111111111111111",
+  "witness": "0x19e7e376e7c213b7e7e7e46cc70a5dd086daff2a"
+}

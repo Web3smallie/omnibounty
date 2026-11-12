@@ -1,0 +1,19 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Green CI on the deferred-value fix",
+  "description": "Land react/react#38132 (or any PR against react/react) with the cleanup check green on the PR head SHA. CI-verified policy: merge is not required.",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }]
+  },
+  "policy": "single_winner",
+  "slots": [{ "amount": "1000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

@@ -1,0 +1,25 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Fix without touching CI notify config",
+  "description": "Any green-CI fix counts, but the discord notify workflow and the reconciler lane module must be byte-identical to the committed blobs (proven via contents API at the PR head).",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }]
+  },
+  "files": {
+    "protected": [
+      { "path": ".github/workflows/compiler_discord_notify.yml", "blob_sha": "8d0a698c24f00b713f6c0e44f2951e4b4ac104a9" },
+      { "path": "packages/react-reconciler/src/ReactFiberLane.js", "blob_sha": "ae9bfa43945714fa7c15e7279f210e8548c7d574" }
+    ]
+  },
+  "policy": "single_winner",
+  "slots": [{ "amount": "2000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

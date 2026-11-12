@@ -1,0 +1,21 @@
+# Default toolchain for the NEAR V3 crate.
+#
+# `stable` is required (not 1.86.0): the committed lockfile pins
+# time@0.3.55 / time-core@0.1.9, which declare rust-version 1.88.0, and
+# Cargo refuses to resolve the locked graph on anything older. Both the
+# Windows sandbox and the Linux verification host carry stable 1.99.1,
+# so this pin resolves identically on both sides. No per-side override.
+#
+# No `targets`/`profile` lines on purpose: rustup would try to
+# auto-install listed components on first use. Install explicitly:
+# `rustup target add wasm32-unknown-unknown`
+# (+ `rustup component add rustfmt clippy` for the lint jobs).
+#
+# WASM release builds use Rust 1.86.0 explicitly (`cargo +1.86.0 ...`),
+# on EVERY platform: rustc dropped `--allow-undefined` from the
+# default wasm32 link line after 1.86 (LLVM 19 -> 23 era), so stable's
+# linker rejects the NEAR `env.*` host imports that must stay
+# undefined until the runtime provides them. (Windows sandbox bonus:
+# stable lacks the wasm target there and has no network to fetch it.)
+[toolchain]
+channel = "stable"

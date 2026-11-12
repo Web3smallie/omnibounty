@@ -1,0 +1,23 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Full experimental test matrix green",
+  "description": "Three named experimental CI jobs must all complete green on the PR head SHA, from GitHub Actions only.",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [
+      { "name": "yarn test-build (-r=experimental --env=production, 10/10)", "apps": ["github-actions"] },
+      { "name": "yarn test-build (-r=experimental --env=development, 8/10)", "apps": ["github-actions"] },
+      { "name": "cleanup", "apps": ["github-actions"] }
+    ]
+  },
+  "policy": "single_winner",
+  "slots": [{ "amount": "5000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

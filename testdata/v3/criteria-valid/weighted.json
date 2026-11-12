@@ -1,0 +1,19 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Weighted podium: 60 / 25 / 15 USDC",
+  "description": "First qualifier earns 60 USDC, second 25, third 15, in deterministic qualification order. Slot amounts are explicit — there is no separate mode that could disagree with the money.",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }]
+  },
+  "policy": "ordered_slots",
+  "slots": [{ "amount": "60000000" }, { "amount": "25000000" }, { "amount": "15000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

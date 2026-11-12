@@ -1,0 +1,18 @@
+{
+  "name": "omnibounty-v3-integration",
+  "version": "1.0.0",
+  "private": true,
+  "description": "OmniBounty V3 cross-chain integration harness (Hardhat in-process EVM + real NEAR-produced vouchers).",
+  "type": "module",
+  "scripts": {
+    "e2e:prepare": "npx hardhat run --no-compile scripts/e2e-v3-prepare.mjs",
+    "e2e": "npx hardhat run --no-compile scripts/e2e-v3-run.mjs"
+  },
+  "dependencies": {
+    "ethers": "6.17.0"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-ethers": "^3.0.0",
+    "hardhat": "^2.26.0"
+  }
+}

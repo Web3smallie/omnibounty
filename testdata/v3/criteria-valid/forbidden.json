@@ -1,0 +1,27 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Scheduler-only change, small diff",
+  "description": "Changes must stay inside the scheduler package, must not touch any test snapshots, must touch the reconciler lane module, and the diff must stay small.",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }]
+  },
+  "files": {
+    "allowed_paths": ["packages/react-reconciler/src/"],
+    "forbidden_paths": ["packages/react-reconciler/src/__tests__/__snapshots__/"],
+    "required_touched": ["packages/react-reconciler/src/ReactFiberLane.js"],
+    "max_changed_files": "10",
+    "max_additions": "500",
+    "max_deletions": "200"
+  },
+  "policy": "single_winner",
+  "slots": [{ "amount": "3000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

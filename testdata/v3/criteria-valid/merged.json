@@ -1,0 +1,20 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Upstream-merged fix on pinned base",
+  "description": "Maintainer-merge policy: the PR must be merged, target the pinned base commit, carry both labels, and have a maintainer approval.",
+  "repo": "react/react",
+  "base_commit": "5b6109643a00e2681499234fd328d16c966deae4",
+  "merge_policy": "merged",
+  "allow_forks": false,
+  "author_association": ["OWNER", "MEMBER", "COLLABORATOR"],
+  "identity_policy": "commitment",
+  "labels": { "required_all": ["CLA Signed", "React Core Team"] },
+  "reviews": { "required_approvals": [{ "login": "rickhanlonii", "association": ["MEMBER", "OWNER"] }] },
+  "policy": "single_winner",
+  "slots": [{ "amount": "10000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

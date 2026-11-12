@@ -1,0 +1,25 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-p2-02/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"willbyers1\\\"[\\\\s\\\\S]*?\\\"state\\\":\\\"(?<w1_state>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"eps1lon\\\"[\\\\s\\\\S]*?\\\"state\\\":\\\"(?<w2_state>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38186/reviews?per_page=100\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794427169,
+    "context": "{\"extractedParameters\":{\"w1_state\":\"APPROVED\",\"w2_state\":\"APPROVED\"},\"providerHash\":\"0xecbde4d705d65505446dfbc7a58a9e51699f20e8e567867e36b1e311fd663b67\"}",
+    "identifier": "0xe9a360a02d999a3882328c188f7ae053704dd6612461be4e4f1b89d198459b5c",
+    "epoch": 1
+  },
+  "identifier": "0xe9a360a02d999a3882328c188f7ae053704dd6612461be4e4f1b89d198459b5c",
+  "signatures": [
+    "0x7f8ba71468393f5cc2eefed1db051059da291f7d6855abe67c3a9b4bf728152153489910cd7e6f62563196320a68e60b669e8b0e5e06151f5772167faebe5b731c"
+  ],
+  "extractedParameterValues": {
+    "w1_state": "APPROVED",
+    "w2_state": "APPROVED"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

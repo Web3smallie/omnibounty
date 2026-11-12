@@ -7,13 +7,60 @@
 import { ethers } from "ethers";
 import { NearRpc } from "./near.mjs";
 import { StateStore } from "./store.mjs";
-import { normalizeVoucherShape, validateSignedVoucher } from "./validate.mjs";
+import {
+  normalizeVoucherShape,
+  normalizeVoucherShapeV2,
+  validateSignedVoucher,
+  validateSignedVoucherV2,
+  validateScheduleConsistency,
+  isVoucherV2Shape,
+} from "./validate.mjs";
 import { loadConfig, summarize } from "./config.mjs";
 
-const ESCROW_ABI = [
+const ESCROW_ABI_V1 = [
   "function usedVoucher(bytes32) view returns (bool)",
   "function claim((uint256 bountyId,address recipient,address token,uint256 amount,uint256 nonce,uint256 expiry,uint256 chainId,address escrow) v, uint8 sigV, bytes32 r, bytes32 s)",
 ];
+
+const ESCROW_ABI_V2 = [
+  "function usedVoucher(bytes32) view returns (bool)",
+  "function claim((uint256 bountyId,uint8 slotIndex,address recipient,address token,uint256 amount,uint256 nonce,uint256 expiry,uint256 chainId,address escrow,bytes32 criteriaHash) v, uint8 sigV, bytes32 r, bytes32 s)",
+  "function slotStatus(uint256 bountyId, uint8 slotIndex) view returns (bool claimed, bool refunded)",
+  "function bounties(uint256) view returns ((address token, address sponsor, uint64 deadline, bytes32 criteriaHash, bool funded, uint256 totalFunded, uint256[] amounts, uint256 claimedBitmap, uint256 refundedBitmap))",
+  // Custom errors (decode-only: lets ethers report revert NAMES instead of
+  // raw selectors in skip reasons; submission behavior unchanged).
+  "error NotOwner()",
+  "error NotProposedOwner()",
+  "error ZeroAddress()",
+  "error ZeroAmount()",
+  "error BountyExists()",
+  "error BountyNotFound()",
+  "error AlreadyFunded()",
+  "error NotFunded()",
+  "error NotSponsor()",
+  "error InvalidSchedule()",
+  "error InvalidSlot()",
+  "error SlotClaimed()",
+  "error AlreadyRefunded()",
+  "error RefundUnavailable()",
+  "error DeadlineNotPassed()",
+  "error VoucherUsed()",
+  "error VoucherExpired()",
+  "error WrongChain()",
+  "error WrongEscrow()",
+  "error AmountMismatch()",
+  "error TokenMismatch()",
+  "error CriteriaMismatch()",
+  "error BadSignature()",
+  "error TransferFailed()",
+  "error Reentrant()",
+];
+
+export { ESCROW_ABI_V1, ESCROW_ABI_V2 };
+
+export function wantsVoucherV2(config) {
+  return String(config.voucherVersion ?? "1") === "2";
+}
 
 export function sleep(ms) {
   return new Promise((r) => setTimeout(r, ms));
@@ -32,7 +79,8 @@ export class Relayer {
     const config = loadConfig();
     const provider = new ethers.JsonRpcProvider(config.baseRpcUrl);
     const wallet = new ethers.Wallet(config.privateKey, provider);
-    const escrow = new ethers.Contract(config.escrowAddress, ESCROW_ABI, wallet);
+    const abi = wantsVoucherV2(config) ? ESCROW_ABI_V2 : ESCROW_ABI_V1;
+    const escrow = new ethers.Contract(config.escrowAddress, abi, wallet);
     return new Relayer({
       config,
       near: new NearRpc(config.nearRpcUrl),
@@ -62,7 +110,15 @@ export class Relayer {
 
   async handleOne(signed) {
     const digestHint = signed?.voucher?.digest ?? "(no digest)";
-    const checked = validateSignedVoucher(signed, {
+    const wantsV2 = wantsVoucherV2(this.config);
+    const isV2 = isVoucherV2Shape(signed);
+    if (wantsV2 !== isV2) {
+      const reason = `version mismatch (relayer v${wantsV2 ? 2 : 1}, voucher v${isV2 ? 2 : 1})`;
+      this.log(`skip ${digestHint}: ${reason}`);
+      return { status: "skipped", digest: digestHint, reason };
+    }
+    const validate = wantsV2 ? validateSignedVoucherV2 : validateSignedVoucher;
+    const checked = validate(signed, {
       expectedChainId: this.config.expectedChainId,
       escrowAddress: this.config.escrowAddress,
       mpcSigner: this.config.mpcSigner,
@@ -87,17 +143,55 @@ export class Relayer {
       this.store.markRelayed(digest, "(already used on-chain)");
       return { status: "already", digest };
     }
-    const v = normalizeVoucherShape(signed.voucher);
-    const tuple = [
-      BigInt(v.bountyId),
-      v.recipient,
-      v.token,
-      BigInt(v.amount),
-      BigInt(v.nonce),
-      BigInt(v.expiry),
-      BigInt(v.chainId),
-      v.escrow,
-    ];
+    const v = wantsV2
+      ? normalizeVoucherShapeV2(signed.voucher)
+      : normalizeVoucherShape(signed.voucher);
+    if (wantsV2) {
+      // Reward-schedule consistency (V3 only): the escrow's declared
+      // schedule must match the NEAR commitment exactly. Pre-submit, so a
+      // mismatch costs zero gas. RPC failures stay transient errors.
+      let nearBounty;
+      let escrowBounty;
+      try {
+        [nearBounty, escrowBounty] = await Promise.all([
+          this.near.getBounty(this.config.contractId, Number(BigInt(v.bountyId))),
+          this.escrow.bounties(BigInt(v.bountyId)),
+        ]);
+      } catch (e) {
+        this.log(`bounty fetch failed for ${digest}: ${e.message}`);
+        return { status: "error", digest, error: e.message };
+      }
+      const sched = validateScheduleConsistency(nearBounty, escrowBounty);
+      if (!sched.ok) {
+        const reason = `schedule mismatch: ${sched.reasons.join("; ")}`;
+        this.log(`skip ${digest}: ${reason}`);
+        this.store.markSkipped(digest, reason);
+        return { status: "skipped", digest, reason };
+      }
+    }
+    const tuple = wantsV2
+      ? [
+          BigInt(v.bountyId),
+          Number(BigInt(v.slotIndex)),
+          v.recipient,
+          v.token,
+          BigInt(v.amount),
+          BigInt(v.nonce),
+          BigInt(v.expiry),
+          BigInt(v.chainId),
+          v.escrow,
+          v.criteriaHash,
+        ]
+      : [
+          BigInt(v.bountyId),
+          v.recipient,
+          v.token,
+          BigInt(v.amount),
+          BigInt(v.nonce),
+          BigInt(v.expiry),
+          BigInt(v.chainId),
+          v.escrow,
+        ];
     let lastError = null;
     for (let attempt = 1; attempt <= this.config.maxAttempts; attempt++) {
       try {
@@ -112,9 +206,10 @@ export class Relayer {
         const msg = e.message ?? String(e);
         // Reverts are final (a retry would revert identically): record skip.
         // Matches the generic execution-reverted wording AND every custom
-        // error in OmniEscrow.sol by name, so finality never depends on
-        // provider message phrasing. Anything else is treated as transient.
-        if (/revert|VoucherUsed|VoucherExpired|BadSignature|AlreadyClaimed|BountyNotFound|TokenMismatch|AmountMismatch|NotFunded|WrongChain|WrongEscrow|ZeroAddress|ZeroAmount|TransferFailed|Reentrant|NotSponsor|BountyExists|AlreadyFunded|NotOwner|call revert/i.test(msg)) {
+        // error in OmniEscrow.sol / OmniEscrowV2.sol by name, so finality
+        // never depends on provider message phrasing. Anything else is
+        // treated as transient.
+        if (/revert|VoucherUsed|VoucherExpired|BadSignature|AlreadyClaimed|BountyNotFound|TokenMismatch|AmountMismatch|NotFunded|WrongChain|WrongEscrow|ZeroAddress|ZeroAmount|TransferFailed|Reentrant|NotSponsor|BountyExists|AlreadyFunded|NotOwner|SlotClaimed|AlreadyRefunded|CriteriaMismatch|InvalidSlot|InvalidSchedule|RefundUnavailable|DeadlineNotPassed|NotProposedOwner|call revert/i.test(msg)) {
           this.store.markSkipped(digest, msg.slice(0, 200));
           this.log(`skip ${digest}: tx would revert (${msg.slice(0, 120)})`);
           return { status: "skipped", digest, reason: msg.slice(0, 200) };

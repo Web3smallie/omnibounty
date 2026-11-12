@@ -1,0 +1,264 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OmniBounty V3 Acceptance Criteria",
+  "description": "Normative shape of a V3 bounty criteria document. The funded document is canonicalized per docs/v3/CANONICALIZATION.md and committed on-chain as criteria_hash = keccak256(canonical_bytes). No defaults exist in canonical form: authoring tooling MUST materialize every field before funding, and anything not in this schema is REJECTED (additionalProperties:false everywhere), so a typo can never silently disable a criterion. Numbers do not exist in this format: every integer is a canonical decimal string, no leading zeros.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "version",
+    "title",
+    "description",
+    "repo",
+    "merge_policy",
+    "allow_forks",
+    "identity_policy",
+    "slots",
+    "policy",
+    "unfilled",
+    "deadline",
+    "challenge_window_sec",
+    "evidence_max_age_sec"
+  ],
+  "properties": {
+    "schema": { "const": "omnibounty/criteria" },
+    "version": { "const": "1" },
+    "title": { "type": "string", "minLength": 1, "maxLength": 120 },
+    "description": { "type": "string", "minLength": 1, "maxLength": 8000 },
+    "repo": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._-]+/[A-Za-z0-9._-]+$"
+    },
+    "base_commit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$",
+      "description": "Optional. When present, the PR's base.sha MUST equal it exactly."
+    },
+    "merge_policy": {
+      "enum": ["merged", "ci_verified"],
+      "description": "'merged' requires extracted merged==true. 'ci_verified' imposes no merged constraint (merged PRs with green CI also qualify)."
+    },
+    "allow_forks": {
+      "type": "boolean",
+      "description": "Required, no default. false => PR head repo MUST equal criteria repo. true => fork heads permitted (base repo still pinned)."
+    },
+    "author_association": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "enum": ["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR", "MANNEQUIN", "NONE"]
+      },
+      "description": "Optional allowlist. When present, the PR author's association MUST be a member."
+    },
+    "identity_policy": {
+      "enum": ["open", "commitment"],
+      "description": "'open': first valid prover is paid; GitHub author is evidence/display only (honest limitation, see SECURITY_MODEL.md). 'commitment': PR title/body MUST contain 'omnibounty:<bounty_id>:<recipient>' where recipient equals the proof owner (branch-write access binds author to payout address)."
+    },
+    "checks": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required"],
+      "properties": {
+        "required": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "apps"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "maxLength": 256 },
+              "apps": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": { "type": "string", "minLength": 1, "maxLength": 128 }
+              }
+            }
+          },
+          "description": "Each entry needs >=1 completed+success run on the PR head from an allowed app slug. Semantics are existential per entry."
+        },
+        "max_age_sec": {
+          "type": "string",
+          "pattern": "^(0|[1-9][0-9]*)$",
+          "description": "Optional. When present and nonzero, each qualifying run's completed_at must be within this many seconds before the claim (u64 range enforced by validator; 0/absent = no limit)."
+        }
+      }
+    },
+    "files": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "allowed_paths": {
+          "$ref": "#/$defs/path_list",
+          "description": "Optional. Every changed path MUST match >=1 entry, else the claim fails."
+        },
+        "forbidden_paths": {
+          "$ref": "#/$defs/path_list",
+          "description": "Optional. No changed path may match any entry."
+        },
+        "required_touched": {
+          "$ref": "#/$defs/path_list",
+          "description": "Optional. Every entry must match >=1 changed path."
+        },
+        "protected": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "blob_sha"],
+            "properties": {
+              "path": { "$ref": "#/$defs/exact_path" },
+              "blob_sha": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+            }
+          },
+          "description": "Optional. Each file's blob SHA at the PR head (contents API) MUST equal the committed blob SHA. Positive equality only — never absence reasoning."
+        },
+        "max_changed_files": { "$ref": "#/$defs/uint_str" },
+        "max_additions": { "$ref": "#/$defs/uint_str" },
+        "max_deletions": { "$ref": "#/$defs/uint_str" },
+        "patch_contains_all": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 256 },
+          "description": "Optional. Every string must occur in the PR unified diff (Accept-pinned diff proof, one contains matcher each)."
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_all"],
+      "properties": {
+        "required_all": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 64 }
+        }
+      }
+    },
+    "reviews": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["required_approvals"],
+      "properties": {
+        "required_approvals": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["login"],
+            "properties": {
+              "login": { "type": "string", "minLength": 1, "maxLength": 128 },
+              "association": {
+                "type": "array",
+                "minItems": 1,
+                "uniqueItems": true,
+                "items": {
+                  "enum": ["OWNER", "MEMBER", "COLLABORATOR", "CONTRIBUTOR", "FIRST_TIMER", "FIRST_TIME_CONTRIBUTOR", "MANNEQUIN", "NONE"]
+                }
+              }
+            }
+          },
+          "description": "Each listed login MUST have state APPROVED (anchored reviewer->state binding). Bare approval COUNTS are deliberately unsupported (not robustly countable via first-match regex)."
+        }
+      }
+    },
+    "issue": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["url", "require_close_reference", "keywords"],
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "Must be https://github.com/<criteria.repo>/(issues|pull)/<number>; repo part validated semantically."
+        },
+        "require_close_reference": { "type": "boolean" },
+        "keywords": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1, "maxLength": 32 }
+        }
+      },
+      "description": "When require_close_reference is true, PR title/body MUST contain '<keyword> #<N>' for >=1 keyword (single alternation matcher). The URL alone is always display + link only."
+    },
+    "policy": {
+      "enum": ["single_winner", "ordered_slots"],
+      "description": "Declared winner policy. Must be consistent with slots length (single_winner <=> exactly 1 slot); inconsistency is an invalid-allocation error."
+    },
+    "slots": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 16,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["amount"],
+        "properties": {
+          "amount": {
+            "$ref": "#/$defs/uint_str",
+            "description": "USDC base units (6 decimals), canonical decimal string, MUST be > 0. Equal vs weighted allocation is expressed by making amounts equal vs different — there is no separate mode that could disagree with the money."
+          }
+        }
+      },
+      "description": "Slot i pays slots[i].amount to the i-th qualifier in deterministic qualification order. sum(slots) MUST equal the funded escrow total (checked at funding time on-chain)."
+    },
+    "unfilled": {
+      "const": "refund_sponsor",
+      "description": "Unfilled slot funds return to the sponsor after expiry. Single allowed value today; reserved for future policies (e.g. rollover)."
+    },
+    "deadline": {
+      "$ref": "#/$defs/uint_str",
+      "description": "Unix seconds; 0 = no deadline. Claims at/after a nonzero deadline are rejected."
+    },
+    "challenge_window_sec": {
+      "$ref": "#/$defs/uint_str",
+      "description": "Seconds between qualification and finalization; 0 = finalize immediately. During the window anyone may submit deterministic counter-evidence; there is no voting and no judge."
+    },
+    "evidence_max_age_sec": {
+      "$ref": "#/$defs/uint_str",
+      "description": "Max proof age at submit, seconds; MUST be <= 604800 (protocol ceiling, enforced semantically). Required explicitly — no hidden default in canonical form."
+    }
+  },
+  "$defs": {
+    "uint_str": {
+      "type": "string",
+      "pattern": "^(0|[1-9][0-9]*)$",
+      "description": "Canonical non-negative integer: decimal digits, no leading zeros, no sign, no whitespace. u64 range (<= 18446744073709551615) enforced semantically."
+    },
+    "exact_path": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^/\\0][^\\0]*[^/\\0]$|^[^/\\0]$",
+      "description": "Exact repo-relative path: no leading/trailing slash, no empty segments (segment check is semantic)."
+    },
+    "path_list": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/path_pattern" }
+    },
+    "path_pattern": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^/\\0][^\\0]*$",
+      "description": "Exact path, or dir/ subtree prefix when ending in '/'. No leading slash, no empty segments, no glob metacharacters except the trailing-slash convention (enforced semantically)."
+    }
+  }
+}

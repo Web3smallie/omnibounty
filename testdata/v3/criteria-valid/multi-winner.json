@@ -1,0 +1,19 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Three independent green fixes",
+  "description": "First three qualifying PRs each earn 5 USDC in deterministic qualification order. Independent heads required (same-PR second proofs cannot fill another slot).",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "open",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }]
+  },
+  "policy": "ordered_slots",
+  "slots": [{ "amount": "5000000" }, { "amount": "5000000" }, { "amount": "5000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "0",
+  "challenge_window_sec": "0",
+  "evidence_max_age_sec": "604800"
+}

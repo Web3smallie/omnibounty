@@ -1,0 +1,35 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-p2-03/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"filename\\\":\\\"(?<r1_file>[^\\\"]*)\\\",\\\"status\\\":\\\"(?<r1_status>[^\\\"]*)\\\",\\\"additions\\\":(?<r1_add>[0-9]+),\\\"deletions\\\":(?<r1_del>[0-9]+)\"},{\"type\":\"regex\",\"value\":\"(?:[\\\\s\\\\S]*?\\\"filename\\\":\\\"[^\\\"]*\\\"){1}[\\\\s\\\\S]*?\\\"filename\\\":\\\"(?<r2_file>[^\\\"]*)\\\",\\\"status\\\":\\\"(?<r2_status>[^\\\"]*)\\\",\\\"additions\\\":(?<r2_add>[0-9]+),\\\"deletions\\\":(?<r2_del>[0-9]+)\"},{\"type\":\"regex\",\"value\":\"(?:[\\\\s\\\\S]*?\\\"filename\\\":\\\"[^\\\"]*\\\"){2}[\\\\s\\\\S]*?\\\"filename\\\":\\\"(?<r3_file>[^\\\"]*)\\\",\\\"status\\\":\\\"(?<r3_status>[^\\\"]*)\\\",\\\"additions\\\":(?<r3_add>[0-9]+),\\\"deletions\\\":(?<r3_del>[0-9]+)\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132/files?per_page=100\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794435398,
+    "context": "{\"extractedParameters\":{\"r1_add\":\"93\",\"r1_del\":\"0\",\"r1_file\":\"packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js\",\"r1_status\":\"modified\",\"r2_add\":\"10\",\"r2_del\":\"1\",\"r2_file\":\"packages/react-reconciler/src/ReactFiberLane.js\",\"r2_status\":\"modified\",\"r3_add\":\"62\",\"r3_del\":\"0\",\"r3_file\":\"packages/react-reconciler/src/__tests__/ReactDeferredValue-test.js\",\"r3_status\":\"modified\"},\"providerHash\":\"0x8b0d1185d5c3a3458155b73c7ccffdb7cf65e3d5f5a1a4bf9d5c136bd5b964a4\"}",
+    "identifier": "0x5beed1da3afb360558cbfe06169832e21e660d1e0cd0e75d36906085c014a963",
+    "epoch": 1
+  },
+  "identifier": "0x5beed1da3afb360558cbfe06169832e21e660d1e0cd0e75d36906085c014a963",
+  "signatures": [
+    "0x9e98fa04c7fb9728eb8974138aae478a11ed2b6d1380258093b2745208f752205621c56d40fe70e0dc3a2173dc72616708e91f9c041fc5dda69219ccdd2b62ea1c"
+  ],
+  "extractedParameterValues": {
+    "r1_add": "93",
+    "r1_del": "0",
+    "r1_file": "packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js",
+    "r1_status": "modified",
+    "r2_add": "10",
+    "r2_del": "1",
+    "r2_file": "packages/react-reconciler/src/ReactFiberLane.js",
+    "r2_status": "modified",
+    "r3_add": "62",
+    "r3_del": "0",
+    "r3_file": "packages/react-reconciler/src/__tests__/ReactDeferredValue-test.js",
+    "r3_status": "modified"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

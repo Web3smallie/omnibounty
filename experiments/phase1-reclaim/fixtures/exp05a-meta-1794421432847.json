@@ -1,0 +1,24 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp05/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"contains\",\"value\":\"2. The deferred task renders, finds no work, and commits an empty tree.\"},{\"type\":\"regex\",\"value\":\"\\\"labels\\\":\\\\[[\\\\s\\\\S]*?\\\"name\\\":\\\"(?<label0>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421430,
+    "context": "{\"extractedParameters\":{\"label0\":\"CLA Signed\"},\"providerHash\":\"0x83666986837f49801ab3549cfea8f73869e069a7e0fc0213b7307f1b14eecdf6\"}",
+    "identifier": "0x4de428bc0ef1b687cfda7409c115a9d7a9e65ed4c1019011c1342d67b9a67e80",
+    "epoch": 1
+  },
+  "identifier": "0x4de428bc0ef1b687cfda7409c115a9d7a9e65ed4c1019011c1342d67b9a67e80",
+  "signatures": [
+    "0x0b500e3795b99d01c1b59af47f0879af3a6ad386b72625407e6412873374a58f4d57ca2001fc36a725ad3f1549aff417d7242dea8647d338f80630f09a8a35b61b"
+  ],
+  "extractedParameterValues": {
+    "label0": "CLA Signed"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

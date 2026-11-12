@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs test/wallets.test.mjs",
+    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs test/wallets.test.mjs test/criteria.test.mjs",
     "prove": "node scripts/prove.mjs"
   },
   "dependencies": {
@@ -18,6 +18,7 @@
     "@near-wallet-selector/nightly": "^8.10.2",
     "@near-wallet-selector/sender": "^8.10.2",
     "@reclaimprotocol/zk-fetch": "^1.1.0",
+    "canonicalize": "2.1.0",
     "ethers": "6.17.0",
     "near-api-js": "^5.1.0",
     "next": "^15.1.0",
