@@ -303,7 +303,7 @@ async fn full_lifecycle_qualify_finalize_callback() -> anyhow::Result<()> {
         .args_json(json!({ "limit": 10 }))
         .await?
         .json()?;
-    assert_eq!(queue.as_array().unwrap().len(), 0);
+    assert!(queue.as_array().unwrap().is_empty());
     Ok(())
 }
 

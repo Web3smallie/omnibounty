@@ -876,7 +876,7 @@ pub fn evaluate(
     }
     let pr_core = pr_core_matchers(criteria, bounty_id, recipient_hex);
     let pr = select_covering(&pr_proofs, &pr_core)
-        .ok_or_else(|| ClaimError::TemplateMismatch("PR mandated matchers"))?;
+        .ok_or(ClaimError::TemplateMismatch("PR mandated matchers"))?;
     out.push(pass("pr.matchers"));
     // Commitment marker: coverage-only, so any single PR proof may carry
     // it (checked separately to keep the value-bound core set small).
@@ -906,7 +906,7 @@ pub fn evaluate(
         0,
     );
     let id_selected = select_covering(&id_proofs, &id_mandated)
-        .ok_or_else(|| ClaimError::TemplateMismatch("identity mandated matchers"))?;
+        .ok_or(ClaimError::TemplateMismatch("identity mandated matchers"))?;
     out.push(pass("identity.matchers"));
 
     // Cross-proof join (URLs, PR numbers, heads).
@@ -2168,7 +2168,7 @@ mod tests {
         // Unterminated comment: `(?#` treated as literal, inner group
         // still counted (fail-closed: never hide a possible group).
         assert!(matcher_captures("(?#unterminated (?<real>.").len() == 1);
-        assert!(matcher_captures("[(?<in_class>]",).len() == 0);
+        assert!(matcher_captures("[(?<in_class>]",).is_empty());
         assert!(matcher_captures("[]](?<real>.)").len() == 1);
         assert!(matcher_captures("[^]](?<real>.)").len() == 1);
         assert!(matcher_captures("[(?<unterminated>").len() == 1);

@@ -2785,7 +2785,7 @@ mod tests {
             .unwrap();
         assert_eq!(c.list_bounties(0, 1).len(), 1);
         assert_eq!(c.list_bounties(1, 10).len(), 1);
-        assert_eq!(c.list_bounties(0, 0).len(), 0);
+        assert!(c.list_bounties(0, 0).is_empty());
     }
 
     // -- MPC application (real ECDSA) ---------------------------------------------
