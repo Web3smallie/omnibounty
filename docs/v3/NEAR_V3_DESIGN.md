@@ -271,10 +271,14 @@ user input — never panics).
   reads, no nullifiers consumed): ≤64 total witness signatures
   (`TooManySignatures`) and ≤256KB total evidence bytes
   (`ProofTooLarge("bundle")`). Per-proof ≤16 signatures retained.
-- Storage-paid-by-caller with exact measurement on every growing call
-  (`create_bounty`, `qualify_claim`, `finalize_claim`, `mark_relayed`,
-  `upsert_epoch`, ownership transfer); fixed-size updates take no deposit.
-  No refunds (see §2).
+- Storage-paid-by-caller with exact measurement on every permissionless
+  growing call (`create_bounty`, `qualify_claim`, `finalize_claim`,
+  `mark_relayed`, `upsert_epoch`): callers flush mutated collections, then
+  cover the measured delta plus root-struct growth. Owner-only transitions
+  (`set_mpc_signer`, `set_mpc_contract`, `transfer_ownership`) are exempt
+  by design -- owner-invoked only, at most 68 bytes each, bounds pinned by
+  the `storage_owner_*` unit tests. Fixed-size updates and shrinking calls
+  take no deposit. No refunds (see §2).
 - Recovery is host-metered: both legs use `env::ecrecover` (malleability
   flag `false`, full-range S, ethers/EVM semantics) at a measured
   0.2936 Tgas/call (pinned schedule). Phase 5.1 migrated from in-WASM

@@ -159,7 +159,22 @@ npm start        # daemon (use systemd/supervisor in production)
 ```
 
 Fund the relayer EOA with Sepolia ETH for gas. It needs no USDC and no
-NEAR key (read-only on NEAR).
+NEAR key (read-only on NEAR) — for V1 / settlement-only operation.
+
+V3 auto-finalization (demo path): with `VOUCHER_VERSION=2` the relayer can
+also submit permissionless `finalize_claim` for matured claims. Add:
+
+```sh
+export NEAR_OPERATOR_ACCOUNT_ID NEAR_OPERATOR_PRIVATE_KEY
+# optional: FINALIZE_ENABLED=false restores settlement-only behavior
+# optional: POLL_INTERVAL_MS=10000 shortens detection for live demos
+```
+
+The operator account needs ~1-2 NEAR and no permissions; it cannot
+redirect funds (recipient/amount come from stored claim state). Without
+these variables the relayer settles exactly as before. See
+`docs/v3/FINALIZATION.md` for how this coexists with the GitHub Actions
+scheduler, which remains the unattended-operation mechanism.
 
 ## 7. Mainnet migration checklist
 
