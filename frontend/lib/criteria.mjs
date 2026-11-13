@@ -203,6 +203,7 @@ export function validateCriteria(doc) {
   if (doc.description !== undefined && (typeof doc.description !== "string" || doc.description.length < 1 || doc.description.length > 8000)) at("description", "must be 1..8000 chars");
   if (doc.repo !== undefined && !isRepoSlug(doc.repo)) at("repo", "must look like 'owner/name' (charset + length rules)");
   if (doc.base_commit !== undefined && (typeof doc.base_commit !== "string" || !HEX40_RE.test(doc.base_commit))) at("base_commit", "must be lowercase 40-hex");
+  if (doc.base_commit === undefined && doc.checks && Array.isArray(doc.checks.required) && doc.checks.required.some((r) => r && r.fail_at_base === true)) at("checks", "fail_at_base requires base_commit");
   if (doc.merge_policy !== undefined && doc.merge_policy !== "merged" && doc.merge_policy !== "ci_verified") at("merge_policy", "must be 'merged' or 'ci_verified'");
   if (doc.allow_forks !== undefined && typeof doc.allow_forks !== "boolean") at("allow_forks", "must be boolean (explicit, no default)");
   if (doc.identity_policy !== undefined && doc.identity_policy !== "open" && doc.identity_policy !== "commitment") at("identity_policy", "must be 'open' or 'commitment'");
@@ -247,7 +248,8 @@ export function validateCriteria(doc) {
         c.required.forEach((r, i) => {
           const p = `checks.required[${i}]`;
           if (!r || typeof r !== "object" || Array.isArray(r)) return at(p, "must be an object");
-          for (const k of Object.keys(r)) if (k !== "name" && k !== "apps") at(p, `unknown field '${k}'`);
+          for (const k of Object.keys(r)) if (k !== "name" && k !== "apps" && k !== "fail_at_base") at(p, `unknown field '${k}'`);
+          if (r.fail_at_base !== undefined && typeof r.fail_at_base !== "boolean") at(`${p}.fail_at_base`, "must be a boolean");
           if (typeof r.name !== "string" || r.name.length < 1 || r.name.length > 256) at(`${p}.name`, "must be 1..256 chars");
           if (names.has(r.name)) at(`${p}.name`, "duplicate check name");
           names.add(r.name);
@@ -438,6 +440,11 @@ export function parseAndValidateCriteria(text) {
 /// extracted join keys or null. Mirrors the V3 template URL pinning.
 export function matchEndpointUrl(kind, url, repo) {
   if (typeof url !== "string" || typeof repo !== "string") return null;
+  // Identity proofs hit the authenticated user endpoint: exact match, no
+  // repo scope. Mirrors the Rust early branch case-for-case.
+  if (kind === "identity") {
+    return url === "https://api.github.com/user" ? {} : null;
+  }
   const base = `https://api.github.com/repos/${repo}`;
   let m;
   switch (kind) {
@@ -445,6 +452,9 @@ export function matchEndpointUrl(kind, url, repo) {
       m = new RegExp(`^${escapeRegExp(base)}/pulls/([1-9][0-9]*)$`).exec(url);
       return m ? { prNumber: m[1] } : null;
     case "check_run":
+      m = new RegExp(`^${escapeRegExp(base)}/check-runs/([1-9][0-9]*)$`).exec(url);
+      return m ? { runId: m[1] } : null;
+    case "base_check":
       m = new RegExp(`^${escapeRegExp(base)}/check-runs/([1-9][0-9]*)$`).exec(url);
       return m ? { runId: m[1] } : null;
     case "check_runs_list":
@@ -515,6 +525,9 @@ export function checkCrossProofJoin(proofs, repo) {
       use(`${tag}.url`, parts.prNumber, "pr");
     } else if (p.kind === "contents") {
       use(`${tag}.ref`, parts.ref, "head");
+    } else if (p.kind === "identity" || p.kind === "base_check") {
+      // URL already pinned above; neither contributes PR/head join keys
+      // (identity binds logins, base legs anchor to base_commit downstream).
     } else {
       errors.push(`${tag}: unknown evidence kind '${p.kind}'`);
     }

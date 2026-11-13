@@ -79,6 +79,22 @@ describe("canonical form", () => {
     const tampered = text.replace("cleanup", "cleanUp");
     assert.notEqual(hashCriteriaDocument(tampered), GOLDEN["simple-ci"]);
   });
+
+  it("gates fail_at_base on base_commit (additive optional field)", () => {
+    const text = readFileSync(new URL("./simple-ci.json", validDir), "utf8");
+    const doc = JSON.parse(text);
+    doc.checks.required[0].fail_at_base = true;
+    let v = parseAndValidateCriteria(JSON.stringify(doc));
+    assert.equal(v.ok, false);
+    assert.match(v.errors.join(" | "), /fail_at_base requires base_commit/);
+    doc.base_commit = "5621284babc44ced80598504e7aae22f75fb32c1";
+    v = parseAndValidateCriteria(JSON.stringify(doc));
+    assert.deepEqual(v.errors, [], `unexpected: ${v.errors.join(" | ")}`);
+    assert.equal(v.ok, true);
+    doc.checks.required[0].fail_at_base = "yes";
+    v = parseAndValidateCriteria(JSON.stringify(doc));
+    assert.equal(v.ok, false);
+  });
 });
 
 describe("cross-proof join", () => {
@@ -130,6 +146,32 @@ describe("cross-proof join", () => {
     );
     assert.equal(matchEndpointUrl("contents", `https://api.github.com/repos/${REPO}/contents/a/b.yml`, REPO), null);
     assert.equal(matchEndpointUrl("unknown", "https://x", REPO), null);
+  });
+
+  it("pins identity and base-check URL templates", () => {
+    assert.deepEqual(matchEndpointUrl("identity", "https://api.github.com/user", REPO), {});
+    assert.equal(matchEndpointUrl("identity", "https://api.github.com/user?x=1", REPO), null);
+    assert.equal(matchEndpointUrl("identity", "https://api.github.com/users/octocat", REPO), null);
+    assert.equal(matchEndpointUrl("identity", "http://api.github.com/user", REPO), null);
+    assert.deepEqual(
+      matchEndpointUrl("base_check", `https://api.github.com/repos/${REPO}/check-runs/9`, REPO),
+      { runId: "9" }
+    );
+    assert.equal(matchEndpointUrl("base_check", `https://api.github.com/repos/${REPO}/check-runs/0`, REPO), null);
+  });
+
+  it("passes identity and base-check proofs through the join untouched", () => {
+    const identity = { kind: "identity", url: "https://api.github.com/user", extracted: {} };
+    const base = {
+      kind: "base_check",
+      url: `https://api.github.com/repos/${REPO}/check-runs/42`,
+      extracted: { head_sha: "00" + HEAD.slice(2) },
+    };
+    const r = checkCrossProofJoin([pr, check, files, identity, base], REPO);
+    assert.deepEqual(r.errors, []);
+    assert.equal(r.ok, true);
+    assert.equal(r.head, HEAD);
+    assert.equal(r.prNumber, "38132");
   });
 });
 

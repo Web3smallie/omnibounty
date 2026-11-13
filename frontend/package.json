@@ -6,7 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs test/wallets.test.mjs test/criteria.test.mjs",
+    "test": "node --test test/validation.test.mjs test/display.test.mjs test/load_env.test.mjs test/wallets.test.mjs test/criteria.test.mjs test/settlement.test.mjs test/reclaim.test.mjs",
     "prove": "node scripts/prove.mjs"
   },
   "dependencies": {
