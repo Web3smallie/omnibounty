@@ -1,0 +1,48 @@
+{
+  "_comment": "OmniBounty V3 TESTNET deployment record (no secrets). NEAR key: local .env (gitignored). EVM deployer key: local .env V3_DEPLOYER_PRIVATE_KEY (gitignored).",
+  "_testnetOnly": true,
+  "network": "testnet",
+  "contract": "omnibounty-v3.testnet",
+  "wasm": {
+    "path": "contracts/near-v3/target/wasm32-unknown-unknown/release/omnibounty_v3.wasm",
+    "bytes": 707229,
+    "sha256": "0x8d5781711383f5351bd96e856daae46408518b77ee7c2d9203931859e1cda32d"
+  },
+  "mpcContract": "v1.signer-prod.testnet",
+  "mpcSigner": "0x4b204ae1890a0cd49cc594fe712fea4ac765a2f9",
+  "derivedKey": "secp256k1:5ZB1nSu67aQ5R9Kz2n23w6B52GmfdyUjRaXVEYy6m9RtQyRpMFWgjuWDDfTVLmj3o27gayzoZU19cssdrQLJSeF3",
+  "derivation": {
+    "predecessor": "omnibounty-v3.testnet",
+    "path": "omnibounty-voucher-v2",
+    "command": "node tools/mpc_derive.mjs omnibounty-v3.testnet omnibounty-voucher-v2",
+    "kdfCheck": "MATCH"
+  },
+  "escrow": "0x63391c272A49c30f79eb6c3d8E10F0652Bb0F767",
+  "escrowNote": "Real Base Sepolia escrow, verified on-chain (code present, owner = deployer, mpcSigner set).",
+  "chainId": 84532,
+  "usdc": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+  "epoch1Witnesses": [
+    "0x244897572368eadf65bfbc5aec98d8e5443a9072"
+  ],
+  "witnessNote": "Confirmed live from reclaim-protocol.testnet get_epoch_by_id(1) via tools/confirm_witnesses.py.",
+  "txHashes": {
+    "nearDeploy": "6H3pmob8TXZdH4WZevqGNtDmevinukNRJmF3CdXRVsjm",
+    "new": "5nR4YNcQp3h2YkP9ZKDjvx1cVg9i37huxk8sAVbSvgr5",
+    "set_mpc_signer": "4XHU1qKP1L6DXDyoVcs3iRzXMwcTqzXspyrWvS1ry8a5",
+    "upsert_epoch": "3HY84tr8GCxBVaaLuf39FdTuHgAKMLeCrKFisBZDjRLF",
+    "nearCreateBounty": "F6339b7jZSL2EuFxXDnMwhn9yLiHErshTrTtHvkQ65sj",
+    "nearMarkFunded": "AKsUj8Ys5G9WtmfmMkvDkEVrsn9dgFsCVqyjpnxNEjEC",
+    "escrowDeploy": "0xa31a1e31d1ddeb3082797e0bf9cfe40b8e1e3d725746caebcf2ea7ec5a7dc192",
+    "escrowCreateBounty": "0x118e2d1485f885959c5f69bd8c7413e4e584654875b2df39fd7fe59bbb43f90f",
+    "usdcApprove": "0x46a8c9f43c47f8758e7eb0d24e967b25097426fb9f452675d9a2ec68a340261c",
+    "escrowFundBounty": "0x6f4ac0e25ef938bf4ed6eb520d283f5fe313f01b656225c45ace26d9a4155549"
+  },
+  "demoBounty": {
+    "bountyId": 223339065907689,
+    "criteriaHash": "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+    "slots": ["1000000"],
+    "deadline": 0,
+    "challengeWindow": 0,
+    "note": "Demo-only: deadline=0 permanently disables refunds; self-funded and self-claimed by the same operator."
+  }
+}
