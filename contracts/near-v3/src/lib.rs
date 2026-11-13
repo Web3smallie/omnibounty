@@ -128,6 +128,9 @@ pub struct ClaimRecord {
     pub recipient: [u8; 20],
     pub pr_number: u64,
     pub head_sha: [u8; 20],
+    /// Verified PR authorship timestamp (unix seconds), unified across
+    /// the bundle's PR proofs. Recorded for deterministic ordering.
+    pub github_created: u64,
     pub claim_seq: u64,
     pub qualified_at: u64,
     pub status: u8,
@@ -178,6 +181,7 @@ pub struct ClaimView {
     pub recipient: String,
     pub pr_number: u64,
     pub head_sha: String,
+    pub github_created: u64,
     pub claim_seq: u64,
     pub qualified_at: u64,
     pub challenge_ends_at: u64,
@@ -480,9 +484,32 @@ impl Contract {
     /// grown since `start_usage`. Callers attach a small deposit (a few
     /// hundredths of a NEAR suffice for any single call); overpayment is
     /// kept by the contract — no refund promises, no reentrancy surface.
-    fn assert_storage_covered(&self, start_usage: u64) -> Result<(), ClaimError> {
+    ///
+    /// Callers MUST flush every mutated `store::LookupMap` before calling:
+    /// map writes are cached and hit the trie only on flush/drop, so an
+    /// unflushed usage delta reads 0 and the check passes vacuously.
+    /// (`store::LookupSet` is write-through and needs no flush.)
+    /// `root_growth_bytes` covers state-struct growth (e.g. `bounty_ids`
+    /// pushes), which serializes only at method return and is likewise
+    /// invisible to usage reads; pass 0 when the struct cannot grow.
+    /// Failure aborts the receipt (all callers panic on `Err`), so
+    /// early-flushed writes always roll back.
+    ///
+    /// Exempted by design: owner-only transitions (`set_mpc_signer`,
+    /// `set_mpc_contract`, `transfer_ownership`) stay non-payable. Only
+    /// the owner can invoke them, so no griefing vector exists, and each
+    /// moves at most 68 bytes; billing the owner for their own contract's
+    /// bytes adds interface churn for no security gain. Bounds are pinned
+    /// by the `storage_owner_*` unit tests; fixed-size and shrinking
+    /// methods need no accounting at all.
+    fn assert_storage_covered(
+        &self,
+        start_usage: u64,
+        root_growth_bytes: u64,
+    ) -> Result<(), ClaimError> {
         let grown = env::storage_usage().saturating_sub(start_usage);
-        let required = env::storage_byte_cost().saturating_mul(grown as u128);
+        let total = grown.saturating_add(root_growth_bytes);
+        let required = env::storage_byte_cost().saturating_mul(total as u128);
         if env::attached_deposit() < required {
             return Err(ClaimError::StorageDepositInsufficient);
         }
@@ -533,6 +560,7 @@ impl Contract {
             recipient: to_hex_prefixed(&c.recipient),
             pr_number: c.pr_number,
             head_sha: to_hex_prefixed(&c.head_sha),
+            github_created: c.github_created,
             claim_seq: c.claim_seq,
             qualified_at: c.qualified_at,
             challenge_ends_at: c.qualified_at.saturating_add(bounty.challenge_window),
@@ -638,7 +666,8 @@ impl Contract {
         }
         self.epochs
             .insert(epoch_id, PinnedEpoch { witnesses: addrs });
-        self.assert_storage_covered(start)?;
+        self.epochs.flush();
+        self.assert_storage_covered(start, 0)?;
         Ok(())
     }
 
@@ -704,7 +733,10 @@ impl Contract {
         };
         self.bounties.insert(bounty_id, bounty.clone());
         self.bounty_ids.push(bounty_id);
-        self.assert_storage_covered(start)?;
+        self.bounties.flush();
+        // Root growth: exactly one `Vec<u64>` push = 8 bytes (pinned by
+        // `storage_bounty_ids_push_is_eight_bytes`).
+        self.assert_storage_covered(start, 8)?;
         log_event(
             "bounty_created",
             &format!(
@@ -792,7 +824,12 @@ impl Contract {
             kind: EvidenceType,
             owner: [u8; 20],
             identifier: [u8; 32],
-            nullifier: [u8; 32],
+            // None for attribute/context proofs (identity, base legs):
+            // their identifiers are stable across claims by design
+            // (one identity, one shared base run), so consuming a
+            // nullifier would wrongly single-use them. Substitution is
+            // still blocked by owner binding + join equality.
+            nullifier: Option<[u8; 32]>,
         }
         let mut staged: Vec<Staged> = Vec::with_capacity(proofs.len());
         // Pass 1: verify each proof; park owned JSON in the arena.
@@ -819,10 +856,15 @@ impl Contract {
             if vp.owner != *recipient {
                 return Err(ClaimError::RecipientMismatch);
             }
-            let key = nullifier_key(bounty_id, recipient, tagged.evidence_type, &vp.identifier);
-            if self.nullifiers.contains(&key) {
-                return Err(ClaimError::IdentifierReplay);
-            }
+            let key = if kind == EvidenceType::Identity || kind == EvidenceType::BaseCheck {
+                None
+            } else {
+                let key = nullifier_key(bounty_id, recipient, tagged.evidence_type, &vp.identifier);
+                if self.nullifiers.contains(&key) {
+                    return Err(ClaimError::IdentifierReplay);
+                }
+                Some(key)
+            };
             // Re-parse params (verify_core checked canonicality but returns
             // no AST; re-parsing keeps that proven module untouched).
             let params = canon::parse_capped("parameters", &proof.claim_info.parameters)?;
@@ -860,7 +902,9 @@ impl Contract {
                 owner: s.owner,
                 identifier: s.identifier,
             });
-            keys.push(s.nullifier);
+            if let Some(key) = s.nullifier {
+                keys.push(key);
+            }
         }
         Ok((out, keys))
     }
@@ -961,6 +1005,7 @@ impl Contract {
             recipient: recipient_addr.0,
             pr_number: joined.pr_number,
             head_sha: joined.head_sha,
+            github_created: joined.github_created,
             claim_seq,
             qualified_at: now,
             status: CLAIM_CHALLENGEABLE,
@@ -969,7 +1014,11 @@ impl Contract {
         self.claims.insert((bounty_id, slot), claim);
         self.pr_claims.insert((bounty_id, joined.pr_number), slot);
         self.bounties.insert(bounty_id, bounty.clone());
-        self.assert_storage_covered(start)?;
+        // Nullifiers need no flush (write-through set).
+        self.claims.flush();
+        self.pr_claims.flush();
+        self.bounties.flush();
+        self.assert_storage_covered(start, 0)?;
         // Evidence commitment (audit trail): auditors recompute this from the
         // qualify_claim arguments — see evidence_records_digest docs. No
         // voucher involvement (frozen interface untouched).
@@ -1024,9 +1073,18 @@ impl Contract {
         if now < claim.qualified_at.saturating_add(bounty.challenge_window) {
             return Err(ClaimError::ChallengeWindowClosed);
         }
-        // A signed voucher exists: never dispatch again.
-        if self.vouchers.contains_key(&(bounty_id, slot)) {
-            return Err(ClaimError::AlreadyFinalized { bounty_id, slot });
+        // A live signed voucher exists: never dispatch again. An EXPIRED
+        // unrelayed voucher is instead reaped so a fresh dispatch can
+        // retry the slot: double-payment is impossible because the escrow
+        // slot bitmap rejects any second payout for the slot, whichever
+        // voucher arrives first. The relayed hint set is deliberately
+        // ignored here — it is permissionless and could otherwise be
+        // abused to brick a legitimate retry.
+        if let Some(signed) = self.vouchers.get(&(bounty_id, slot)) {
+            if now <= signed.voucher.expiry {
+                return Err(ClaimError::AlreadyFinalized { bounty_id, slot });
+            }
+            self.vouchers.remove(&(bounty_id, slot));
         }
         // An in-flight dispatch blocks a second one — two digests would
         // yield two independently valid vouchers for one slot. Only a
@@ -1091,7 +1149,9 @@ impl Contract {
         claim.pending_digest = Some(digest);
         claim.status = CLAIM_FINALIZED;
         self.claims.insert((bounty_id, slot), claim);
-        self.assert_storage_covered(start)?;
+        self.pending.flush();
+        self.claims.flush();
+        self.assert_storage_covered(start, 0)?;
         log_event(
             "voucher_dispatched",
             &format!(
@@ -1274,7 +1334,8 @@ impl Contract {
         let start = env::storage_usage();
         let digest: [u8; 32] = parse_hex("digest", &digest_hex)?;
         self.relayed.insert(digest);
-        self.assert_storage_covered(start)?;
+        // Write-through set: no flush needed.
+        self.assert_storage_covered(start, 0)?;
         Ok(true)
     }
 
@@ -1326,18 +1387,20 @@ impl Contract {
 
     /// Unrelayed signed vouchers (relayer work queue). Bounded scan over the
     /// registry; the escrow's `usedVoucher` map remains ground truth.
+    /// Unrelayed vouchers ordered by verified authorship time (oldest
+    /// first), then bounty id, then slot: settlement priority follows
+    /// GitHub authorship, not submission order. Ties are impossible to
+    /// manipulate — all keys are verified or positional — and the order
+    /// is fully deterministic.
     pub fn list_unrelayed(&self, limit: u64) -> Vec<UnrelayedVoucher> {
         let limit = limit.min(MAX_LIST_LIMIT) as usize;
-        let mut out = Vec::new();
-        'outer: for id in self.bounty_ids.iter() {
+        let mut out: Vec<(u64, u64, u8, UnrelayedVoucher)> = Vec::new();
+        for id in self.bounty_ids.iter() {
             let bounty = match self.bounties.get(id) {
                 Some(b) => b,
                 None => continue,
             };
             for (i, _) in bounty.slots.iter().enumerate() {
-                if out.len() >= limit {
-                    break 'outer;
-                }
                 let slot = i as u8;
                 let signed = match self.vouchers.get(&(*id, slot)) {
                     Some(s) => s,
@@ -1347,18 +1410,32 @@ impl Contract {
                 if self.relayed.contains(&digest) {
                     continue;
                 }
-                out.push(UnrelayedVoucher {
-                    bounty_id: *id,
+                // Vouchers imply claims; a missing record sorts last
+                // rather than vanishing (defensive: unreachable today).
+                let created = self
+                    .claims
+                    .get(&(*id, slot))
+                    .map(|c| c.github_created)
+                    .unwrap_or(u64::MAX);
+                out.push((
+                    created,
+                    *id,
                     slot,
-                    digest: to_hex_prefixed(&digest),
-                    voucher: voucher_view(&signed.voucher),
-                    v: signed.v,
-                    r: to_hex_prefixed(&signed.r),
-                    s: to_hex_prefixed(&signed.s),
-                });
+                    UnrelayedVoucher {
+                        bounty_id: *id,
+                        slot,
+                        digest: to_hex_prefixed(&digest),
+                        voucher: voucher_view(&signed.voucher),
+                        v: signed.v,
+                        r: to_hex_prefixed(&signed.r),
+                        s: to_hex_prefixed(&signed.s),
+                    },
+                ));
             }
         }
-        out
+        out.sort_by_key(|entry| (entry.0, entry.1, entry.2));
+        out.truncate(limit);
+        out.into_iter().map(|(_, _, _, v)| v).collect()
     }
 
     #[handle_result]
@@ -1774,22 +1851,58 @@ mod tests {
         head: &str,
         timestamp_s: u64,
     ) -> Vec<TaggedProofArg> {
+        passing_bundle_full(
+            bounty_id,
+            criteria_json,
+            recipient_hex,
+            pr,
+            head,
+            timestamp_s,
+            "acdlite",
+            "10001",
+            "2026-10-26T19:00:00Z",
+        )
+    }
+
+    /// Full passing bundle with caller-chosen authorship triple. Identity
+    /// and PR proofs always agree (see the mismatch tests for the
+    /// negative controls).
+    #[allow(clippy::too_many_arguments)]
+    fn passing_bundle_full(
+        bounty_id: u64,
+        criteria_json: &str,
+        recipient_hex: &str,
+        pr: u64,
+        head: &str,
+        timestamp_s: u64,
+        author: &str,
+        author_id: &str,
+        pr_created: &str,
+    ) -> Vec<TaggedProofArg> {
         let doc = criteria::strict_parse(criteria_json).unwrap();
         let vc = criteria::validate_criteria(&doc).unwrap();
         let pr_matchers =
             rules::mandated_matchers(EvidenceType::Pr, &vc, bounty_id, recipient_hex, 0);
         let check_matchers =
             rules::mandated_matchers(EvidenceType::CheckRun, &vc, bounty_id, recipient_hex, 0);
-        let pr_ex = serde_json::json!({
-            "author": "acdlite",
+        let id_matchers =
+            rules::mandated_matchers(EvidenceType::Identity, &vc, bounty_id, recipient_hex, 0);
+        let mut pr_ex = serde_json::json!({
+            "author": author,
+            "author_id": author_id,
             "head_sha": head,
             "merged": "true",
             "repo": "react/react",
             "number": pr.to_string(),
+            "pr_created": pr_created,
         })
         .as_object()
         .unwrap()
         .clone();
+        // Base-pinned criteria demand the base_sha extraction too.
+        if let Some(base) = vc.base_commit {
+            pr_ex.insert("base_sha".to_string(), Value::String(hex::encode(base)));
+        }
         let check_ex = serde_json::json!({
             "run_name": "cleanup",
             "head_sha": head,
@@ -1826,7 +1939,81 @@ mod tests {
                     timestamp_s,
                 ),
             },
+            TaggedProofArg {
+                evidence_type: 7,
+                proof: signed_proof(
+                    "https://api.github.com/user",
+                    "application/vnd.github+json",
+                    id_matchers,
+                    serde_json::json!({
+                        "id_login": author,
+                        "id_num": author_id,
+                    })
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+                    recipient_hex,
+                    1,
+                    timestamp_s,
+                ),
+            },
         ]
+    }
+
+    /// Identity proof with caller-chosen owner/timestamp/login/id, for
+    /// mismatch/expiry/substitution cases (the passing builders pin the
+    /// matching values).
+    fn identity_tagged(
+        owner_hex: &str,
+        timestamp_s: u64,
+        login: &str,
+        id_num: &str,
+    ) -> TaggedProofArg {
+        let doc = criteria::strict_parse(SIMPLE).unwrap();
+        let vc = criteria::validate_criteria(&doc).unwrap();
+        TaggedProofArg {
+            evidence_type: 7,
+            proof: signed_proof(
+                "https://api.github.com/user",
+                "application/vnd.github+json",
+                rules::mandated_matchers(EvidenceType::Identity, &vc, 7, owner_hex, 0),
+                serde_json::json!({"id_login": login, "id_num": id_num})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+                owner_hex,
+                1,
+                timestamp_s,
+            ),
+        }
+    }
+
+    /// Base-anchored check-run proof for fail-to-pass tests.
+    fn basecheck_tagged(head_hex: &str, conclusion: &str) -> TaggedProofArg {
+        let doc = criteria::strict_parse(SIMPLE).unwrap();
+        let vc = criteria::validate_criteria(&doc).unwrap();
+        TaggedProofArg {
+            evidence_type: 8,
+            proof: signed_proof(
+                "https://api.github.com/repos/react/react/check-runs/424242",
+                "application/vnd.github+json",
+                rules::mandated_matchers(EvidenceType::BaseCheck, &vc, 7, RECIPIENT, 0),
+                serde_json::json!({
+                    "run_name": "cleanup",
+                    "head_sha": head_hex,
+                    "status": "completed",
+                    "conclusion": conclusion,
+                    "completed_at": "2026-01-02T00:00:00Z",
+                    "app": "github-actions",
+                })
+                .as_object()
+                .unwrap()
+                .clone(),
+                RECIPIENT,
+                1,
+                NOW_S,
+            ),
+        }
     }
 
     fn qualify(
@@ -2428,11 +2615,11 @@ mod tests {
             auditor_digest
         );
         // Golden pin: fixed bundle (deterministic identifiers) →
-        // fixed digest, independently cross-checked against pycryptodome
-        // keccak256 over the 66-byte preimage.
+        // fixed digest, independently cross-checked against ethers
+        // keccak256 over the 99-byte preimage (PR + check-run + identity).
         assert_eq!(
             format!("0x{}", hex::encode(auditor_digest)),
-            "0xfd64ce1638444a6c178831879b2024528958e8f779875431622b263da3a69229"
+            "0x9a44c0dedd91983d7f9bc6ae6cc6c7ac3bf9367158077fa8e954e96be187a028"
         );
     }
 
@@ -2608,9 +2795,12 @@ mod tests {
     }
 
     fn mpc_addr_hex() -> String {
+        mpc_addr_for(&mpc_test_key())
+    }
+
+    fn mpc_addr_for(key: &[u8; 32]) -> String {
         use k256::ecdsa::SigningKey;
-        let key = mpc_test_key();
-        let signing = SigningKey::from_bytes((&key).into()).unwrap();
+        let signing = SigningKey::from_bytes(key.into()).unwrap();
         let point = signing.verifying_key().to_encoded_point(false);
         let hash = near_sdk::env::keccak256(&point.as_bytes()[1..]);
         to_hex_prefixed(&hash[12..])
@@ -2787,6 +2977,14 @@ mod tests {
         let doc = criteria_custom(&["600000", "400000", "300000"], "0", "0");
         let windowed = criteria_custom(&["600000"], "0", "3600");
         let bundle = |pr: u64, head: &str| passing_bundle_at(7, &doc, RECIPIENT, pr, head, now);
+        // Impostor variants: mallory's login / wrong numeric id over
+        // acdlite's PR (identity is always the last bundle element).
+        let mut mallory = bundle(100, HEAD_A);
+        mallory.pop();
+        mallory.push(identity_tagged(RECIPIENT, now, "mallory", "10001"));
+        let mut wrong_id = bundle(100, HEAD_A);
+        wrong_id.pop();
+        wrong_id.push(identity_tagged(RECIPIENT, now, "acdlite", "99999"));
         let fx = serde_json::json!({
             "bounty_id": 7,
             "criteria": doc,
@@ -2801,6 +2999,8 @@ mod tests {
                 "c": bundle(100, HEAD_B),
                 "d": bundle(102, HEAD_C),
                 "e": bundle(103, HEAD_D),
+                "m": mallory,
+                "n": wrong_id,
             },
         });
         let path = std::env::var("XSUITE_FIXTURE_PATH").unwrap_or_else(|_| {
@@ -2963,6 +3163,336 @@ mod tests {
         eprintln!("wrote {out} (generated_at={now})");
     }
 
+    // -- Authorship identity -----------------------------------------------------
+
+    #[test]
+    fn identity_impostor_cannot_claim_others_pr() {
+        let mut c = new_contract();
+        create_simple(&mut c, 7);
+        fund(&mut c, 7);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        // Mallory's identity over acdlite's PR: login gate fires first.
+        let mut bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        assert_eq!(bundle.last().unwrap().evidence_type, 7);
+        bundle.pop();
+        bundle.push(identity_tagged(RECIPIENT, NOW_S, "mallory", "10001"));
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("identity.login"), "unexpected: {err}");
+        // Same login, wrong numeric id: the rename-proof gate fires.
+        let mut bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        bundle.pop();
+        bundle.push(identity_tagged(RECIPIENT, NOW_S, "acdlite", "99999"));
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("identity.id"), "unexpected: {err}");
+        // Failed attempts reserve nothing: the genuine claim still takes
+        // slot 0 with its authorship timestamp recorded.
+        let bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        let v = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap();
+        assert_eq!((v.slot, v.claim_seq), (0, 0));
+        let claim = c.get_claim(7, 0).unwrap();
+        assert_eq!(
+            claim.github_created,
+            rules::parse_github_time("2026-10-26T19:00:00Z").unwrap()
+        );
+    }
+
+    #[test]
+    fn forged_identity_first_rejected_at_qualify() {
+        // Full-pipeline version of the substitution attack: a forged
+        // victim-valued identity proof (custom matchers) FIRST, genuine
+        // attacker identity second. Values must bind to the covering
+        // proof, so the login gate fires instead of the theft succeeding.
+        let mut c = new_contract();
+        create_simple(&mut c, 7);
+        fund(&mut c, 7);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        let victim = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        let forged = TaggedProofArg {
+            evidence_type: 7,
+            proof: signed_proof(
+                "https://api.github.com/user",
+                "application/vnd.github+json",
+                vec![
+                    ("regex".to_string(), "\"bio\":\"(?<id_login>[^\"]+)\"".to_string()),
+                    ("regex".to_string(), "id_is_(?<id_num>[0-9]+)".to_string()),
+                ],
+                serde_json::json!({"id_login": "acdlite", "id_num": "10001"})
+                    .as_object()
+                    .unwrap()
+                    .clone(),
+                RECIPIENT,
+                1,
+                NOW_S,
+            ),
+        };
+        let bundle = vec![
+            victim[0].clone(),
+            victim[1].clone(),
+            forged,
+            identity_tagged(RECIPIENT, NOW_S, "mallory", "99999"),
+        ];
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("identity.login"), "unexpected: {err}");
+    }
+
+    #[test]
+    fn identity_missing_expired_and_foreign_rejected() {
+        let mut c = new_contract();
+        create_simple(&mut c, 7);
+        fund(&mut c, 7);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        // Missing identity proof fails structurally.
+        let mut bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        bundle.pop();
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("identity proof"), "unexpected: {err}");
+        // Stale identity proof fails freshness like any other proof.
+        let mut bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        bundle.pop();
+        bundle.push(identity_tagged(
+            RECIPIENT,
+            NOW_S - 8 * 86400,
+            "acdlite",
+            "10001",
+        ));
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("PROOF_TOO_OLD"), "unexpected: {err}");
+        // Another recipient's identity proof cannot be substituted.
+        let mut bundle = passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A);
+        bundle.pop();
+        bundle.push(identity_tagged(OTHER, NOW_S, "acdlite", "10001"));
+        let err = qualify(&mut c, 7, SIMPLE, bundle, RECIPIENT).unwrap_err();
+        assert!(err.contains("RECIPIENT_MISMATCH"), "unexpected: {err}");
+    }
+
+    #[test]
+    fn identity_reusable_across_bounties_but_bound_per_claim() {
+        // Cross-bounty reuse policy preserved: the same identity (and the
+        // same PR) legitimately backs claims on distinct bounties.
+        let mut c = new_contract();
+        create_simple(&mut c, 7);
+        create_simple(&mut c, 8);
+        fund(&mut c, 7);
+        fund(&mut c, 8);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        qualify(
+            &mut c,
+            7,
+            SIMPLE,
+            passing_bundle(7, SIMPLE, RECIPIENT, 100, HEAD_A),
+            RECIPIENT,
+        )
+        .unwrap();
+        qualify(
+            &mut c,
+            8,
+            SIMPLE,
+            passing_bundle(8, SIMPLE, RECIPIENT, 100, HEAD_A),
+            RECIPIENT,
+        )
+        .unwrap();
+        assert_eq!(c.get_claim(7, 0).unwrap().claim_seq, 0);
+        assert_eq!(c.get_claim(8, 0).unwrap().claim_seq, 0);
+    }
+
+    #[test]
+    fn fail_to_pass_end_to_end() {
+        const BASE: &str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        let mut v: Value = serde_json::from_str(SIMPLE).unwrap();
+        v["base_commit"] = Value::String(BASE.to_string());
+        v["checks"]["required"][0]["fail_at_base"] = Value::Bool(true);
+        let doc = serde_json::to_string(&v).unwrap();
+        // Criteria without the base anchor is rejected at validation.
+        let mut bad = v.clone();
+        bad.as_object_mut().unwrap().remove("base_commit");
+        assert!(criteria::validate_criteria(&bad).is_err());
+        for (id, leg, ok) in [
+            (7u64, Some((BASE, "failure")), true),
+            (8u64, Some((BASE, "success")), false),
+            (9u64, Some((HEAD_A, "failure")), false),
+            (10u64, None, false),
+        ] {
+            let mut c = new_contract();
+            ctx(SPONSOR, ONE_NEAR, ts());
+            c.create_bounty(id, TOKEN.to_string(), doc.clone()).unwrap();
+            fund(&mut c, id);
+            pin_witness(&mut c, 1, &[&witness_hex()]);
+            let mut bundle = passing_bundle(id, &doc, RECIPIENT, 100, HEAD_A);
+            if let Some((head, conclusion)) = leg {
+                bundle.push(basecheck_tagged(head, conclusion));
+            }
+            let res = qualify(&mut c, id, &doc, bundle, RECIPIENT);
+            if ok {
+                res.unwrap();
+            } else {
+                let err = res.unwrap_err();
+                assert!(err.contains("check:cleanup:base"), "unexpected: {err}");
+            }
+        }
+    }
+
+    #[test]
+    fn callback_applies_while_paused() {
+        // Pause gates new actions; in-flight settlement still completes.
+        let (mut c, digest) = setup_finalizable("0");
+        ctx(OWNER, 0, ts());
+        c.set_paused(true);
+        let good = mpc_response(mpc_test_key(), &digest);
+        let view = c.apply_mpc_signature(&digest, &good).unwrap();
+        assert!(view.v == 27 || view.v == 28);
+        assert!(c.get_voucher(7, 0).is_some());
+    }
+
+    #[test]
+    fn signer_rotation_midflight_releases_and_retries_clean() {
+        let (mut c, digest) = setup_finalizable("0");
+        // Rotate to an unrelated key while the dispatch is in flight.
+        let other_key = [0x99u8; 32];
+        ctx(OWNER, 0, ts());
+        c.set_mpc_signer(mpc_addr_for(&other_key)).unwrap();
+        // The old response no longer verifies: release, no voucher.
+        let stale = mpc_response(mpc_test_key(), &digest);
+        assert_eq!(
+            c.apply_mpc_signature(&digest, &stale).unwrap_err(),
+            ClaimError::MpcSignerMismatch
+        );
+        assert!(c.get_voucher(7, 0).is_none());
+        // Mirroring on_voucher_signed: release, then retry under the new
+        // signer completes the slot.
+        c.release_pending(&digest);
+        ctx("caller.testnet", ONE_NEAR, ts());
+        let (_, digest2) = c.prepare_finalize(7, 0).unwrap();
+        assert_ne!(digest, digest2);
+        let fresh = mpc_response(other_key, &digest2);
+        c.apply_mpc_signature(&digest2, &fresh).unwrap();
+        assert!(c.get_voucher(7, 0).is_some());
+    }
+
+    #[test]
+    fn expired_voucher_reaped_for_fresh_retry_live_voucher_blocks() {
+        let (mut c, digest) = setup_finalizable("0");
+        let good = mpc_response(mpc_test_key(), &digest);
+        c.apply_mpc_signature(&digest, &good).unwrap();
+        // Live voucher: re-dispatch refused as before.
+        ctx("caller.testnet", ONE_NEAR, ts());
+        assert_eq!(
+            c.prepare_finalize(7, 0).unwrap_err(),
+            ClaimError::AlreadyFinalized {
+                bounty_id: 7,
+                slot: 0
+            }
+        );
+        // Past expiry with no relay: the dead voucher is reaped and a
+        // fresh dispatch (new digest, new nonce) proceeds.
+        ctx(
+            "caller.testnet",
+            ONE_NEAR,
+            ts() + (DEFAULT_VOUCHER_TTL_SEC + 100) * 1_000_000_000,
+        );
+        let (_, digest2) = c.prepare_finalize(7, 0).unwrap();
+        assert_ne!(digest, digest2);
+        let fresh = mpc_response(mpc_test_key(), &digest2);
+        let view = c.apply_mpc_signature(&digest2, &fresh).unwrap();
+        assert_eq!(view.voucher.nonce, 1);
+        assert!(c.get_voucher(7, 0).is_some());
+    }
+
+    #[test]
+    fn qualified_claims_survive_deadline_and_epoch_removal() {
+        // Deadline gates new qualifications only.
+        let mut c = new_contract();
+        let doc = criteria_custom(&["600"], &format!("{}", NOW_S + 3600), "0");
+        ctx(SPONSOR, ONE_NEAR, ts());
+        c.create_bounty(7, TOKEN.to_string(), doc.clone()).unwrap();
+        fund(&mut c, 7);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        ctx(OWNER, 0, ts());
+        c.set_mpc_signer(mpc_addr_hex()).unwrap();
+        qualify(
+            &mut c,
+            7,
+            &doc,
+            passing_bundle(7, &doc, RECIPIENT, 100, HEAD_A),
+            RECIPIENT,
+        )
+        .unwrap();
+        ctx("caller.testnet", ONE_NEAR, ts() + 7200 * 1_000_000_000);
+        c.prepare_finalize(7, 0).unwrap();
+        // Epoch removal affects future verifies, never recorded claims.
+        // (Fresh bounty id: mock storage persists across new_contract().)
+        let mut c = new_contract();
+        let doc = criteria_custom(&["600"], "0", "0");
+        ctx(SPONSOR, ONE_NEAR, ts());
+        c.create_bounty(8, TOKEN.to_string(), doc.clone()).unwrap();
+        fund(&mut c, 8);
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        ctx(OWNER, 0, ts());
+        c.set_mpc_signer(mpc_addr_hex()).unwrap();
+        qualify(
+            &mut c,
+            8,
+            &doc,
+            passing_bundle(8, &doc, RECIPIENT, 100, HEAD_A),
+            RECIPIENT,
+        )
+        .unwrap();
+        ctx(OWNER, 0, ts());
+        c.remove_epoch(1);
+        ctx("caller.testnet", ONE_NEAR, ts());
+        c.prepare_finalize(8, 0).unwrap();
+    }
+
+    #[test]
+    fn relay_queue_orders_by_verified_authorship_time() {
+        // Settlement priority follows GitHub authorship (oldest first),
+        // not submission order; ties break by bounty id, then slot.
+        let mut c = new_contract();
+        ctx(OWNER, 0, ts());
+        c.set_mpc_signer(mpc_addr_hex()).unwrap();
+        pin_witness(&mut c, 1, &[&witness_hex()]);
+        let settle = |c: &mut Contract, id: u64, pr: u64, head: &str, created: &str| {
+            let doc = criteria_custom(&["600"], "0", "0");
+            ctx(SPONSOR, ONE_NEAR, ts());
+            c.create_bounty(id, TOKEN.to_string(), doc.clone()).unwrap();
+            fund(&mut *c, id);
+            qualify(
+                &mut *c,
+                id,
+                &doc,
+                passing_bundle_full(
+                    id, &doc, RECIPIENT, pr, head, NOW_S, "acdlite", "10001", created,
+                ),
+                RECIPIENT,
+            )
+            .unwrap();
+            ctx("caller.testnet", ONE_NEAR, ts());
+            let (_, digest) = c.prepare_finalize(id, 0).unwrap();
+            let good = mpc_response(mpc_test_key(), &digest);
+            c.apply_mpc_signature(&digest, &good).unwrap();
+        };
+        // Submitted newest-first; the queue must still list oldest-first,
+        // with the authorship tie broken by bounty id.
+        settle(&mut c, 7, 100, HEAD_A, "2026-10-26T19:00:00Z");
+        settle(&mut c, 8, 101, HEAD_B, "2026-10-20T10:00:00Z");
+        settle(&mut c, 9, 102, HEAD_C, "2026-10-20T10:00:00Z");
+        let listed: Vec<(u64, u8)> = c
+            .list_unrelayed(10)
+            .iter()
+            .map(|v| (v.bounty_id, v.slot))
+            .collect();
+        assert_eq!(listed, vec![(8, 0), (9, 0), (7, 0)]);
+        // Relayed entries leave the queue; order of the rest is stable.
+        let first = c.list_unrelayed(10)[0].digest.clone();
+        ctx("relayer.testnet", ONE_NEAR, ts());
+        c.mark_relayed(first).unwrap();
+        let listed: Vec<(u64, u8)> = c
+            .list_unrelayed(10)
+            .iter()
+            .map(|v| (v.bounty_id, v.slot))
+            .collect();
+        assert_eq!(listed, vec![(9, 0), (7, 0)]);
+    }
+
     // -- Gas calibration (carryover A) ------------------------------------------
     //
     // These tests MEASURE host-call gas via the mock's VMLogic gas counter,
@@ -2986,16 +3516,24 @@ mod tests {
         let prm = rules::mandated_matchers(EvidenceType::Pr, &vc, bounty_id, recipient_hex, 0);
         let chm =
             rules::mandated_matchers(EvidenceType::CheckRun, &vc, bounty_id, recipient_hex, 0);
-        let pr_ex = serde_json::json!({
+        let idm =
+            rules::mandated_matchers(EvidenceType::Identity, &vc, bounty_id, recipient_hex, 0);
+        let mut pr_ex = serde_json::json!({
             "author": "acdlite",
+            "author_id": "10001",
             "head_sha": head,
             "merged": "true",
             "repo": "react/react",
             "number": pr.to_string(),
+            "pr_created": "2026-10-26T19:00:00Z",
         })
         .as_object()
         .unwrap()
         .clone();
+        // Base-pinned criteria demand the base_sha extraction too.
+        if let Some(base) = vc.base_commit {
+            pr_ex.insert("base_sha".to_string(), Value::String(hex::encode(base)));
+        }
         let check_ex = serde_json::json!({
             "run_name": "cleanup",
             "head_sha": head,
@@ -3028,6 +3566,25 @@ mod tests {
                     "application/vnd.github+json",
                     chm,
                     check_ex,
+                    recipient_hex,
+                    1,
+                    NOW_S,
+                    keys,
+                ),
+            },
+            TaggedProofArg {
+                evidence_type: 7,
+                proof: signed_proof_multi(
+                    "https://api.github.com/user",
+                    "application/vnd.github+json",
+                    idm,
+                    serde_json::json!({
+                        "id_login": "acdlite",
+                        "id_num": "10001",
+                    })
+                    .as_object()
+                    .unwrap()
+                    .clone(),
                     recipient_hex,
                     1,
                     NOW_S,
@@ -3126,6 +3683,8 @@ mod tests {
     /// Padding uses permitted extras (matcher-subset semantics + ignored
     /// extracted keys) within the per-proof 16KB caps.
     #[allow(clippy::too_many_arguments)]
+    /// `n` counts the PR + check-run proofs; an identity proof is always
+    /// appended last, so the bundle holds `n + 1` proofs total.
     fn n_proof_bundle(
         bounty_id: u64,
         criteria_json: &str,
@@ -3136,6 +3695,7 @@ mod tests {
         keys: &[[u8; 32]],
         pad_pr: usize,
         pad_chk: usize,
+        pad_id: usize,
     ) -> Vec<TaggedProofArg> {
         assert!(n >= 1, "bundle needs the PR proof");
         let doc = criteria::strict_parse(criteria_json).unwrap();
@@ -3149,10 +3709,12 @@ mod tests {
                     rules::mandated_matchers(EvidenceType::Pr, &vc, bounty_id, recipient_hex, 0),
                     serde_json::json!({
                         "author": "acdlite",
+                        "author_id": "10001",
                         "head_sha": head,
                         "merged": "true",
                         "repo": "react/react",
                         "number": pr_start.to_string(),
+                        "pr_created": "2026-10-26T19:00:00Z",
                     })
                     .as_object()
                     .unwrap()
@@ -3207,12 +3769,44 @@ mod tests {
                 ),
             });
         }
+        let mut id_matchers =
+            rules::mandated_matchers(EvidenceType::Identity, &vc, bounty_id, recipient_hex, 0);
+        let mut id_ex = serde_json::json!({
+            "id_login": "acdlite",
+            "id_num": "10001",
+        })
+        .as_object()
+        .unwrap()
+        .clone();
+        if pad_id > 0 {
+            while id_matchers.len() < rules::MAX_MATCHERS_PER_PROOF {
+                id_matchers.push(("contains".to_string(), "x".repeat(500)));
+            }
+            id_ex.insert(
+                "pad".to_string(),
+                serde_json::Value::String("y".repeat(pad_id)),
+            );
+        }
+        out.push(TaggedProofArg {
+            evidence_type: 7,
+            proof: signed_proof_multi(
+                "https://api.github.com/user",
+                "application/vnd.github+json",
+                id_matchers,
+                id_ex,
+                recipient_hex,
+                1,
+                NOW_S,
+                keys,
+            ),
+        });
         out
     }
 
     #[test]
     fn gas_qualify_many_shapes() {
-        // 32 / 64 sigs must pass (realistic-to-generous; 64 is the cap).
+        // 48 / 64 sigs must pass (realistic-to-generous; 64 is the cap).
+        // Totals include the appended identity proof's witnesses.
         let keys16: Vec<[u8; 32]> = (1u8..=16).map(|b| [b; 32]).collect();
         let addrs16: Vec<String> = keys16
             .iter()
@@ -3221,22 +3815,24 @@ mod tests {
         let refs16: Vec<&str> = addrs16.iter().map(|s| s.as_str()).collect();
         let mut prev = 0u64;
         // Distinct bounty ids: mock storage persists across testing_env!.
-        for (id, n, pr_start, head) in [(7u64, 2usize, 300u64, HEAD_C), (8, 4, 400, HEAD_D)] {
+        // Counts include the appended identity proof (n + 1 proofs total).
+        for (id, n, pr_start, head) in [(7u64, 2usize, 300u64, HEAD_C), (8, 3, 400, HEAD_D)] {
             let mut c = new_contract();
             let doc = criteria_custom(&["600", "400", "300", "200"], "0", "0");
             ctx(SPONSOR, ONE_NEAR, ts());
             c.create_bounty(id, TOKEN.to_string(), doc.clone()).unwrap();
             fund(&mut c, id);
             pin_witness(&mut c, 1, &refs16);
-            let bundle = n_proof_bundle(id, &doc, RECIPIENT, n, pr_start, head, &keys16, 0, 0);
+            let bundle = n_proof_bundle(id, &doc, RECIPIENT, n, pr_start, head, &keys16, 0, 0, 0);
             let arg_bytes = serde_json::to_vec(&bundle).unwrap().len();
             ctx("caller.testnet", ONE_NEAR, ts());
             let before = env::used_gas().as_gas();
             let res = c.qualify_claim(id, doc, bundle, RECIPIENT.to_string());
             let g = env::used_gas().as_gas() - before;
             eprintln!(
-                "GAS_MANY proofs={n} sigs={} arg_bytes={arg_bytes} passed={} gas={g}",
-                n * 16,
+                "GAS_MANY proofs={} sigs={} arg_bytes={arg_bytes} passed={} gas={g}",
+                n + 1,
+                (n + 1) * 16,
                 res.is_ok()
             );
             res.unwrap();
@@ -3253,7 +3849,7 @@ mod tests {
         c.create_bounty(9, TOKEN.to_string(), doc.clone()).unwrap();
         fund(&mut c, 9);
         pin_witness(&mut c, 1, &refs16);
-        let bundle = n_proof_bundle(9, &doc, RECIPIENT, 40, 500, HEAD_E, &keys16, 0, 0);
+        let bundle = n_proof_bundle(9, &doc, RECIPIENT, 39, 500, HEAD_E, &keys16, 0, 0, 0);
         ctx("caller.testnet", ONE_NEAR, ts());
         let before = env::used_gas().as_gas();
         let err = c
@@ -3282,22 +3878,22 @@ mod tests {
         c.create_bounty(7, TOKEN.to_string(), doc.clone()).unwrap();
         fund(&mut c, 7);
         pin_witness(&mut c, 1, &refs13);
-        // 65 sigs (5 x 13): qualify rejects...
-        let over = n_proof_bundle(7, &doc, RECIPIENT, 5, 700, HEAD_B, &keys13, 0, 0);
+        // 78 sigs (5 x 13 + identity x 13): qualify rejects...
+        let over = n_proof_bundle(7, &doc, RECIPIENT, 5, 700, HEAD_B, &keys13, 0, 0, 0);
         let err = qualify(&mut c, 7, &doc, over, RECIPIENT).unwrap_err();
         assert!(err.contains("TOO_MANY_SIGNATURES"), "unexpected: {err}");
         // ...dry reports the identical deterministic rejection...
-        let over = n_proof_bundle(7, &doc, RECIPIENT, 5, 700, HEAD_B, &keys13, 0, 0);
+        let over = n_proof_bundle(7, &doc, RECIPIENT, 5, 700, HEAD_B, &keys13, 0, 0, 0);
         let d = c.dry_qualify(7, doc.clone(), over, RECIPIENT.to_string());
         assert!(!d.ok);
         assert!(d
             .errors
             .iter()
             .any(|e| e.starts_with("TOO_MANY_SIGNATURES")));
-        // ...no nullifiers burned: the same first-4 proofs (52 sigs) now pass.
-        let under = n_proof_bundle(7, &doc, RECIPIENT, 4, 700, HEAD_B, &keys13, 0, 0);
+        // ...no nullifiers burned: 3 x 13 + identity (52 sigs) now pass.
+        let under = n_proof_bundle(7, &doc, RECIPIENT, 3, 700, HEAD_B, &keys13, 0, 0, 0);
         qualify(&mut c, 7, &doc, under, RECIPIENT).unwrap();
-        // Exactly 64 passes: 4 x 16 with fresh identifiers.
+        // Exactly 64 passes: 3 x 16 + identity x 16 with fresh identifiers.
         let keys16: Vec<[u8; 32]> = (1u8..=16).map(|b| [b; 32]).collect();
         let addrs16: Vec<String> = keys16
             .iter()
@@ -3308,7 +3904,7 @@ mod tests {
             1,
             &addrs16.iter().map(|s| s.as_str()).collect::<Vec<_>>(),
         );
-        let exact = n_proof_bundle(7, &doc, RECIPIENT, 4, 800, HEAD_C, &keys16, 0, 0);
+        let exact = n_proof_bundle(7, &doc, RECIPIENT, 3, 800, HEAD_C, &keys16, 0, 0, 0);
         assert_eq!(
             exact
                 .iter()
@@ -3318,7 +3914,7 @@ mod tests {
         );
         qualify(&mut c, 7, &doc, exact, RECIPIENT).unwrap();
         // Empty signatures fail closed (per-proof pre-crypto check).
-        let mut empty = n_proof_bundle(7, &doc, RECIPIENT, 2, 900, HEAD_D, &keys16, 0, 0);
+        let mut empty = n_proof_bundle(7, &doc, RECIPIENT, 2, 900, HEAD_D, &keys16, 0, 0, 0);
         empty[0].proof.signed_claim.signatures.clear();
         let err = qualify(&mut c, 7, &doc, empty, RECIPIENT).unwrap_err();
         assert!(err.contains("INVALID_LENGTH"), "unexpected: {err}");
@@ -3409,14 +4005,14 @@ mod tests {
         // any rules outcome still measures the size term.
         let keys1: Vec<[u8; 32]> = vec![[0x11u8; 32]];
         let addr = format!("0x{}", hex::encode(witness_addr_for(&keys1[0])));
-        for (id, n, pr, pad) in [(7u64, 40usize, 600u64, 0usize), (8, 11, 700, 15_000usize)] {
+        for (id, n, pr, pad) in [(7u64, 39usize, 600u64, 0usize), (8, 11, 700, 15_000usize)] {
             let mut c = new_contract();
             let doc = criteria_custom(&["600", "400", "300", "200"], "0", "0");
             ctx(SPONSOR, ONE_NEAR, ts());
             c.create_bounty(id, TOKEN.to_string(), doc.clone()).unwrap();
             fund(&mut c, id);
             pin_witness(&mut c, 1, &[addr.as_str()]);
-            let bundle = n_proof_bundle(id, &doc, RECIPIENT, n, pr, HEAD_A, &keys1, pad, pad);
+            let bundle = n_proof_bundle(id, &doc, RECIPIENT, n, pr, HEAD_A, &keys1, pad, pad, 0);
             let ev_bytes: usize = bundle
                 .iter()
                 .map(|t| t.proof.claim_info.parameters.len() + t.proof.claim_info.context.len())
@@ -3457,35 +4053,43 @@ mod tests {
         fund(&mut c, 7);
         pin_witness(&mut c, 1, &[addr.as_str()]);
         // Measure per-kind base sizes with matcher top-up active (pad=1).
-        let probe = n_proof_bundle(7, &doc, RECIPIENT, 16, 700, HEAD_B, &keys1, 1, 1);
+        // Fifteen PR/check proofs plus the appended identity proof.
+        let probe = n_proof_bundle(7, &doc, RECIPIENT, 15, 700, HEAD_B, &keys1, 1, 1, 1);
         let pr_base = probe[0].proof.claim_info.parameters.len()
             + probe[0].proof.claim_info.context.len()
             - 1;
         let chk_base = probe[1].proof.claim_info.parameters.len()
             + probe[1].proof.claim_info.context.len()
             - 1;
+        let id_base = probe[15].proof.claim_info.parameters.len()
+            + probe[15].proof.claim_info.context.len()
+            - 1;
         // Context grows 1:1 with pad length ("y" needs no JSON escaping).
         let pad_pr = 16_384 - pr_base;
         let pad_chk = 16_384 - chk_base;
-        let at = n_proof_bundle(7, &doc, RECIPIENT, 16, 700, HEAD_B, &keys1, pad_pr, pad_chk);
+        let pad_id = 16_384 - id_base;
+        let at = n_proof_bundle(
+            7, &doc, RECIPIENT, 15, 700, HEAD_B, &keys1, pad_pr, pad_chk, pad_id,
+        );
         assert_eq!(ev_total(&at), 262_144);
         for t in &at {
             assert!(t.proof.claim_info.parameters.len() <= 16_384);
             assert!(t.proof.claim_info.context.len() <= 16_384);
         }
-        // Over by 15 bytes (one per check proof): dry and qualify agree.
+        // Over by 14 bytes (one per check proof): dry and qualify agree.
         let over = n_proof_bundle(
             7,
             &doc,
             RECIPIENT,
-            16,
+            15,
             700,
             HEAD_B,
             &keys1,
             pad_pr,
             pad_chk + 1,
+            pad_id,
         );
-        assert_eq!(ev_total(&over), 262_144 + 15);
+        assert_eq!(ev_total(&over), 262_144 + 14);
         let d = c.dry_qualify(7, doc.clone(), over, RECIPIENT.to_string());
         assert!(!d.ok);
         assert!(d.errors.iter().any(|e| e.starts_with("PROOF_TOO_LARGE")));
@@ -3493,12 +4097,13 @@ mod tests {
             7,
             &doc,
             RECIPIENT,
-            16,
+            15,
             700,
             HEAD_B,
             &keys1,
             pad_pr,
             pad_chk + 1,
+            pad_id,
         );
         let err = qualify(&mut c, 7, &doc, over, RECIPIENT).unwrap_err();
         assert!(err.contains("PROOF_TOO_LARGE"), "unexpected: {err}");
@@ -3611,6 +4216,7 @@ mod tests {
             recipient: [0x55u8; 20],
             pr_number: 100,
             head_sha: [0x66u8; 20],
+            github_created: 1794421000,
             claim_seq: 0,
             qualified_at: 1,
             status: CLAIM_CHALLENGEABLE,
@@ -3621,5 +4227,93 @@ mod tests {
         eprintln!("STATE_BYTES bounty16={bl} claim={cl}");
         assert!(bl < 1024, "bounty too big: {bl}");
         assert!(cl < 256, "claim too big: {cl}");
+    }
+
+    #[test]
+    fn storage_bounty_ids_push_is_eight_bytes() {
+        // Locks the root-growth constant in `create_bounty`'s deposit
+        // check: `Vec<u64>` Borsh layout is a u32 len plus 8 bytes per
+        // element, so one push grows the serialized state by exactly 8.
+        // Mock-independent (pure serialization lengths).
+        let before: Vec<u64> = vec![1, 2, 3];
+        let mut after = before.clone();
+        after.push(4);
+        let dl = borsh::to_vec(&after).unwrap().len() - borsh::to_vec(&before).unwrap().len();
+        assert_eq!(dl, 8);
+    }
+
+    /// Serialized root-state length. Test-only ruler for owner-path
+    /// growth bounds: map caches are `#[borsh(skip)]`, so the delta
+    /// across a root-only mutation is exactly what `state_write` adds.
+    /// Mock-independent (pure serialization, no `storage_usage`).
+    fn root_len(c: &Contract) -> usize {
+        borsh::to_vec(c).unwrap().len()
+    }
+
+    #[test]
+    fn storage_owner_mpc_signer_first_set_is_twenty_bytes() {
+        let mut c = new_contract();
+        ctx(OWNER, 0, ts());
+        let before = root_len(&c);
+        c.set_mpc_signer(mpc_addr_hex()).unwrap();
+        // None (1 B) -> Some([u8; 20]) (21 B).
+        assert_eq!(root_len(&c) as i64 - before as i64, 20);
+        // Re-setting is a same-size overwrite.
+        let before = root_len(&c);
+        c.set_mpc_signer(OTHER.to_string()).unwrap();
+        assert_eq!(root_len(&c), before);
+    }
+
+    #[test]
+    fn storage_owner_mpc_contract_delta_is_name_length_delta() {
+        let mut c = new_contract();
+        ctx(OWNER, 0, ts());
+        let short = "ab".to_string();
+        let long = format!("sub.{}", "a".repeat(60));
+        assert_eq!(long.len(), 64);
+        let before = root_len(&c);
+        c.set_mpc_contract(short.parse().unwrap());
+        // "mpc.testnet" (11) -> 2 chars.
+        assert_eq!(root_len(&c) as i64 - before as i64, 2 - 11);
+        let before = root_len(&c);
+        c.set_mpc_contract(long.parse().unwrap());
+        // Widest possible single-call swing: 62 bytes.
+        assert_eq!(root_len(&c) as i64 - before as i64, 62);
+    }
+
+    #[test]
+    fn storage_owner_transfer_bounded_by_name_length() {
+        let mut c = new_contract();
+        ctx(OWNER, 0, ts());
+        let before = root_len(&c);
+        let long = format!("sub.{}", "a".repeat(60));
+        c.transfer_ownership(long.parse().unwrap());
+        // None (1 B) -> Some (1 + 4 + 64 B): maximum +68.
+        assert_eq!(root_len(&c) as i64 - before as i64, 68);
+        let before = root_len(&c);
+        c.transfer_ownership("ab".parse().unwrap());
+        // Re-proposal swaps Some(64-char) for Some(2-char): -62.
+        assert_eq!(root_len(&c) as i64 - before as i64, -62);
+    }
+
+    #[test]
+    fn storage_owner_accept_always_shrinks() {
+        for pending in [
+            "next.testnet".to_string(),
+            format!("sub.{}", "a".repeat(60)),
+        ] {
+            let mut c = new_contract();
+            ctx(OWNER, 0, ts());
+            c.transfer_ownership(pending.parse().unwrap());
+            let before = root_len(&c);
+            ctx(&pending, 0, ts());
+            c.accept_ownership();
+            // take() frees (4 + plen); owner swap adds (plen - olen):
+            // net is -4 - olen regardless of the pending name.
+            assert_eq!(
+                root_len(&c) as i64 - before as i64,
+                -(4 + OWNER.len() as i64)
+            );
+        }
     }
 }

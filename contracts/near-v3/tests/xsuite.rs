@@ -528,8 +528,87 @@ async fn window_storage_auth_and_gas_guards() -> anyhow::Result<()> {
         &format!("{out:?}"),
         "STORAGE_DEPOSIT_INSUFFICIENT",
     );
+
+    // Storage: dust (1-yocto) creation fails too — measurement is exact,
+    // not just nonzero. The bounty id is still uncreated (prior failure
+    // rolled back).
+    let out = owner
+        .call(omni.id(), "create_bounty")
+        .args_json(json!({
+            "bounty_id": bounty_id,
+            "token": TOKEN,
+            "criteria_json": criteria,
+        }))
+        .deposit(NearToken::from_yoctonear(1))
+        .max_gas()
+        .transact()
+        .await?;
+    assert_failed(
+        out.is_failure(),
+        &format!("{out:?}"),
+        "STORAGE_DEPOSIT_INSUFFICIENT",
+    );
     create_and_fund(&owner, &omni, bounty_id, criteria).await?;
     create_and_fund(&owner, &omni, bounty_id + 1, windowed).await?;
+
+    // Storage: dust qualify fails (same bundle succeeds with 1 NEAR below,
+    // proving the dust failure is the deposit, and the rollback is clean).
+    let out = owner
+        .call(omni.id(), "qualify_claim")
+        .args_json(json!({
+            "bounty_id": bounty_id,
+            "criteria_json": criteria,
+            "proofs": fx["bundles"]["a"],
+            "recipient": recipient,
+        }))
+        .deposit(NearToken::from_yoctonear(1))
+        .max_gas()
+        .transact()
+        .await?;
+    assert_failed(
+        out.is_failure(),
+        &format!("{out:?}"),
+        "STORAGE_DEPOSIT_INSUFFICIENT",
+    );
+    let out = qualify(
+        &owner,
+        &omni,
+        bounty_id,
+        criteria,
+        &fx["bundles"]["a"],
+        recipient,
+    )
+    .await?;
+    assert!(out.is_success(), "setup qualify failed: {out:?}");
+
+    // Storage: dust finalize fails on the qualified claim (window is open
+    // on the non-windowed bounty, so the deposit gate is what fires).
+    let out = owner
+        .call(omni.id(), "finalize_claim")
+        .args_json(json!({ "bounty_id": bounty_id, "slot": 0 }))
+        .deposit(NearToken::from_yoctonear(1))
+        .max_gas()
+        .transact()
+        .await?;
+    assert_failed(
+        out.is_failure(),
+        &format!("{out:?}"),
+        "STORAGE_DEPOSIT_INSUFFICIENT",
+    );
+
+    // Storage: zero-deposit relay of a fresh digest fails (already-enforced
+    // write-through path, pinned against regressions).
+    let out = owner
+        .call(omni.id(), "mark_relayed")
+        .args_json(json!({ "digest_hex": format!("0x{}", "ab".repeat(32)) }))
+        .max_gas()
+        .transact()
+        .await?;
+    assert_failed(
+        out.is_failure(),
+        &format!("{out:?}"),
+        "STORAGE_DEPOSIT_INSUFFICIENT",
+    );
 
     // Challenge window: immediate finalization refused.
     let out = qualify(
@@ -579,5 +658,67 @@ async fn window_storage_auth_and_gas_guards() -> anyhow::Result<()> {
         .transact()
         .await?;
     assert_failed(out.is_failure(), &format!("{out:?}"), "insufficient gas");
+    Ok(())
+}
+
+/// Authorship binding end-to-end: another developer's identity cannot
+/// claim the PR, identity proofs are mandatory, and the genuine claim
+/// records its authorship timestamp.
+#[tokio::test]
+async fn identity_binding_rejects_impostors() -> anyhow::Result<()> {
+    let worker = sandbox_worker().await?;
+    let fx = claim_fixture();
+    let bounty_id = fx["bounty_id"].as_u64().unwrap();
+    let criteria = fx["criteria"].as_str().unwrap();
+    let recipient = fx["recipient"].as_str().unwrap();
+    let (owner, omni, mock) = setup(&worker).await?;
+    configure(&owner, &omni, &mock, &fx).await?;
+    create_and_fund(&owner, &omni, bounty_id, criteria).await?;
+
+    // Mallory's identity over acdlite's PR: rejected on the login gate.
+    let out = qualify(
+        &owner,
+        &omni,
+        bounty_id,
+        criteria,
+        &fx["bundles"]["m"],
+        recipient,
+    )
+    .await?;
+    assert_failed(out.is_failure(), &format!("{out:?}"), "identity.login");
+    // Right login, wrong numeric id: rejected on the id gate.
+    let out = qualify(
+        &owner,
+        &omni,
+        bounty_id,
+        criteria,
+        &fx["bundles"]["n"],
+        recipient,
+    )
+    .await?;
+    assert_failed(out.is_failure(), &format!("{out:?}"), "identity.id");
+    // Missing identity proof: rejected structurally.
+    let mut stripped = fx["bundles"]["a"].clone();
+    stripped
+        .as_array_mut()
+        .unwrap()
+        .retain(|t| t.get("evidence_type").and_then(Value::as_u64) != Some(7));
+    let out = qualify(&owner, &omni, bounty_id, criteria, &stripped, recipient).await?;
+    assert_failed(out.is_failure(), &format!("{out:?}"), "identity proof");
+    // Genuine claim succeeds afterwards with authorship recorded
+    // (2026-10-26T19:00:00Z, the fixture's attested creation time).
+    let out = qualify(
+        &owner,
+        &omni,
+        bounty_id,
+        criteria,
+        &fx["bundles"]["a"],
+        recipient,
+    )
+    .await?;
+    assert!(out.is_success(), "genuine qualify failed: {out:?}");
+    let claim = claim_view(&omni, bounty_id, 0).await?;
+    assert_eq!(claim["slot"], 0);
+    assert_eq!(claim["github_created"], 1793041200);
     Ok(())
 }

@@ -94,6 +94,13 @@ pub enum EvidenceType {
     Review = 4,
     Contents = 5,
     Diff = 6,
+    /// Authenticated `GET https://api.github.com/user` proof binding the
+    /// prover to a GitHub login + numeric user id. Required on every claim.
+    Identity = 7,
+    /// Check-run proof anchored to the pinned base commit (must show
+    /// `failure`) for fail-to-pass rules. Same URL shape as CheckRun but
+    /// excluded from head unity.
+    BaseCheck = 8,
 }
 
 impl EvidenceType {
@@ -105,6 +112,8 @@ impl EvidenceType {
             4 => Ok(Self::Review),
             5 => Ok(Self::Contents),
             6 => Ok(Self::Diff),
+            7 => Ok(Self::Identity),
+            8 => Ok(Self::BaseCheck),
             _ => Err(ClaimError::InvalidEvidenceType(v)),
         }
     }
@@ -348,8 +357,10 @@ mod tests {
         assert_ne!(key, other_recip);
         // Evidence tag parsing rejects out-of-range values.
         assert!(EvidenceType::from_u8(0).is_err());
-        assert!(EvidenceType::from_u8(7).is_err());
+        assert!(EvidenceType::from_u8(9).is_err());
         assert_eq!(EvidenceType::from_u8(6).unwrap(), EvidenceType::Diff);
+        assert_eq!(EvidenceType::from_u8(7).unwrap(), EvidenceType::Identity);
+        assert_eq!(EvidenceType::from_u8(8).unwrap(), EvidenceType::BaseCheck);
     }
 
     #[test]

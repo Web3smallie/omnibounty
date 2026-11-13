@@ -40,6 +40,9 @@ pub enum IdentityPolicy {
 pub struct CheckRule {
     pub name: String,
     pub apps: Vec<String>,
+    /// When true, the check must demonstrably fail on the pinned base
+    /// commit (fail-to-pass). Requires `base_commit` at the top level.
+    pub fail_at_base: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -493,7 +496,7 @@ pub fn validate_criteria(doc: &Value) -> Result<ValidatedCriteria, ClaimError> {
                 .as_object()
                 .ok_or(ClaimError::InvalidCriteria("bad check"))?;
             for k in ro.keys() {
-                if k != "name" && k != "apps" {
+                if k != "name" && k != "apps" && k != "fail_at_base" {
                     return Err(ClaimError::InvalidCriteria("unknown field"));
                 }
             }
@@ -515,9 +518,15 @@ pub fn validate_criteria(doc: &Value) -> Result<ValidatedCriteria, ClaimError> {
                 128,
             )
             .map_err(|_| ClaimError::InvalidCriteria("bad check apps"))?;
+            let fail_at_base = match ro.get("fail_at_base") {
+                None => false,
+                Some(Value::Bool(b)) => *b,
+                Some(_) => return Err(ClaimError::InvalidCriteria("bad fail_at_base")),
+            };
             checks.push(CheckRule {
                 name: name.to_string(),
                 apps,
+                fail_at_base,
             });
         }
         if let Some(m) = co.get("max_age_sec") {
@@ -820,6 +829,13 @@ pub fn validate_criteria(doc: &Value) -> Result<ValidatedCriteria, ClaimError> {
     )?;
     if evidence_max_age == 0 || evidence_max_age > MAX_EVIDENCE_AGE_SEC {
         return Err(ClaimError::InvalidCriteria("bad evidence_max_age_sec"));
+    }
+    // Fail-to-pass legs anchor to the pinned base; without it the rule
+    // could never be satisfied, so reject the document at creation.
+    if base_commit.is_none() && checks.iter().any(|c| c.fail_at_base) {
+        return Err(ClaimError::InvalidCriteria(
+            "fail_at_base requires base_commit",
+        ));
     }
 
     Ok(ValidatedCriteria {
