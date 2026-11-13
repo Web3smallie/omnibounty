@@ -15,7 +15,7 @@ const tmpdir = (() => {
 })();
 
 function harness(
-  { vouchers = [], used = false, claimImpl = null, version = "2", nearBounty, escrowBounty } = {}
+  { used = false, claimImpl = null, version = "2", nearBounty, escrowBounty } = {}
 ) {
   const ctx = testSetupV2();
   const calls = [];
@@ -45,9 +45,19 @@ function harness(
     claimedBitmap: 0n,
     refundedBitmap: 0n,
   };
+  // Enumeration mocks: V2 discovery never calls listUnrelayed (the
+  // suppressible hint); serveVoucher() wires fixtures through
+  // listBounties/getClaim/getVoucher instead.
+  const served = { bounties: [], claims: new Map(), vouchers: new Map() };
   const near = {
-    async listUnrelayed() {
-      return vouchers;
+    async listBounties() {
+      return served.bounties;
+    },
+    async getClaim(contractId, bountyId, slot) {
+      return served.claims.get(`${bountyId}:${slot}`) ?? null;
+    },
+    async getVoucher(contractId, bountyId, slot) {
+      return served.vouchers.get(`${bountyId}:${slot}`) ?? null;
     },
     async getBounty() {
       return nearBounty === undefined ? defaultNear : nearBounty;
@@ -78,14 +88,40 @@ function harness(
   const store = new StateStore(join(tmpdir, `obv2-harness-${Date.now()}-${Math.random()}.json`));
   const logs = [];
   const relayer = new Relayer({ config, near, escrow, store, log: (m) => logs.push(m) });
+  relayer.near.__served = served;
+  relayer.near.__defaultNear = defaultNear;
   return { ctx, relayer, calls, store, logs };
+}
+
+function field(v, snake, camel) {
+  return v[snake] ?? v[camel];
+}
+
+// Serve one signed voucher through enumeration mocks, sizing the bounty
+// to fit its slot and marking the claim signed (mirrors contract views).
+function serveVoucher(h, signed) {
+  const v = signed.voucher;
+  const bountyId = Number(BigInt(field(v, "bounty_id", "bountyId")));
+  const slot = Number(BigInt(field(v, "slot_index", "slotIndex") ?? 0));
+  const served = h.relayer.near.__served;
+  const base = h.relayer.near.__defaultNear;
+  if (!served.bounties.some((b) => b.id === bountyId)) {
+    served.bounties.push({
+      ...base,
+      id: bountyId,
+      slots_filled: slot + 1,
+      slots: Array.from({ length: slot + 1 }, () => "1"),
+    });
+  }
+  served.claims.set(`${bountyId}:${slot}`, { signed: true });
+  served.vouchers.set(`${bountyId}:${slot}`, signed);
 }
 
 describe("relayerV2", () => {
   it("relays a valid V2 voucher end to end", async () => {
     const h = harness();
     const signed = signVoucherV2(makeVoucherV2({ slot_index: 2 }, h.ctx), h.ctx.mpc);
-    h.relayer.near.listUnrelayed = async () => [signed];
+    serveVoucher(h, signed);
     const results = await h.relayer.pollOnce();
     assert.equal(results[0].status, "relayed");
     assert.equal(h.calls.length, 1);
@@ -102,7 +138,7 @@ describe("relayerV2", () => {
     const h = harness();
     const v1ctx = testSetup();
     const v1signed = signVoucher(makeVoucher({}, v1ctx), v1ctx.mpc);
-    h.relayer.near.listUnrelayed = async () => [v1signed];
+    serveVoucher(h, v1signed);
     const results = await h.relayer.pollOnce();
     assert.equal(results[0].status, "skipped");
     assert.match(results[0].reason, /version mismatch/);
@@ -112,13 +148,13 @@ describe("relayerV2", () => {
   it("skips used-on-chain and invalid V2 vouchers without submitting", async () => {
     const h = harness({ used: true });
     const signed = signVoucherV2(makeVoucherV2({}, h.ctx), h.ctx.mpc);
-    h.relayer.near.listUnrelayed = async () => [signed];
+    serveVoucher(h, signed);
     assert.equal((await h.relayer.pollOnce())[0].status, "already");
     assert.equal(h.calls.length, 0);
 
     const h2 = harness();
     const bad = signVoucherV2(makeVoucherV2({ chain_id: 1n }, h2.ctx), h2.ctx.mpc);
-    h2.relayer.near.listUnrelayed = async () => [bad];
+    serveVoucher(h2, bad);
     assert.equal((await h2.relayer.pollOnce())[0].status, "skipped");
     assert.equal(h2.calls.length, 0);
   });
@@ -141,7 +177,7 @@ describe("relayerV2", () => {
         },
       });
       const signed = signVoucherV2(makeVoucherV2({}, h.ctx), h.ctx.mpc);
-      h.relayer.near.listUnrelayed = async () => [signed];
+      serveVoucher(h, signed);
       const results = await h.relayer.pollOnce();
       assert.equal(results[0].status, "skipped", reason);
       assert.equal(h.calls.length, 1, reason);
@@ -163,7 +199,7 @@ describe("relayerV2", () => {
       },
     });
     const signed = signVoucherV2(makeVoucherV2({}, h.ctx), h.ctx.mpc);
-    h.relayer.near.listUnrelayed = async () => [signed];
+    serveVoucher(h, signed);
     const results = await h.relayer.pollOnce();
     assert.equal(results[0].status, "skipped");
     assert.match(results[0].reason, /schedule mismatch/);
@@ -173,7 +209,7 @@ describe("relayerV2", () => {
   it("skips unknown or unfunded bounties, errors on fetch failure", async () => {
     const h = harness({ nearBounty: null });
     const signed = signVoucherV2(makeVoucherV2({}, h.ctx), h.ctx.mpc);
-    h.relayer.near.listUnrelayed = async () => [signed];
+    serveVoucher(h, signed);
     assert.match((await h.relayer.pollOnce())[0].reason, /unknown NEAR bounty/);
 
     const h2 = harness();
@@ -181,7 +217,7 @@ describe("relayerV2", () => {
       throw new Error("RPC down");
     };
     const signed2 = signVoucherV2(makeVoucherV2({}, h2.ctx), h2.ctx.mpc);
-    h2.relayer.near.listUnrelayed = async () => [signed2];
+    serveVoucher(h2, signed2);
     const r2 = await h2.relayer.pollOnce();
     assert.equal(r2[0].status, "error");
   });
