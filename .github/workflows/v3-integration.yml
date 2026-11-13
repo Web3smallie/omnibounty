@@ -224,11 +224,7 @@ jobs:
         run: npx hardhat run --no-compile scripts/e2e-v3-prepare.mjs
 
       - name: Export e2e env
-        run: >
-          node -e "const fs=require('fs');
-          const e=JSON.parse(fs.readFileSync('integration/out/e2e-env.json','utf8'));
-          fs.appendFileSync(process.env.GITHUB_ENV,
-          `E2E_ESCROW_ADDRESS=${e.escrow}\nE2E_TOKEN_ADDRESS=${e.token}\nE2E_CHAIN_ID=${e.chainId}\n');"
+        run: node -e 'const fs=require("fs"); const e=JSON.parse(fs.readFileSync("integration/out/e2e-env.json","utf8")); fs.appendFileSync(process.env.GITHUB_ENV,"E2E_ESCROW_ADDRESS="+e.escrow+"\nE2E_TOKEN_ADDRESS="+e.token+"\nE2E_CHAIN_ID="+e.chainId+"\n");'
 
       - name: Regen e2e fixture
         working-directory: contracts/near-v3
