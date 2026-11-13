@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "gen": "node gen_fixtures.mjs",
-    "check": "node check_equivalence.mjs"
+    "check": "node check_equivalence.mjs",
+    "test": "node --test test/finalize.test.mjs test/finalize_batch.test.mjs"
   },
   "dependencies": {
     "canonicalize": "2.1.0",

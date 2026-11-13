@@ -110,6 +110,20 @@ jobs:
           --target wasm32-unknown-unknown --release
           --manifest-path tests/mock-mpc/Cargo.toml
 
+      # LLVM 19+ pads LEB128 immediates that sandbox 2.9.0's strict parser
+      # rejects with PrepareError(Deserialization) on first call; rewrite
+      # them to canonical form (V2-proven procedure, no semantic change).
+      - name: Canonicalize WASM LEB128
+        run: |
+          python3 ../../tools/canon_leb.py target/wasm32-unknown-unknown/release/omnibounty_v3.wasm target/wasm32-unknown-unknown/release/omnibounty_v3.wasm
+          python3 ../../tools/canon_leb.py tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm
+
+      # Fails immediately (non-zero exit) if any padded site remains.
+      - name: Verify canonical WASM
+        run: |
+          python3 ../../tools/canon_leb.py --check target/wasm32-unknown-unknown/release/omnibounty_v3.wasm
+          python3 ../../tools/canon_leb.py --check tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm
+
       # Determinism gate: identical inputs must yield byte-identical
       # fixtures (timestamps pinned via env, outputs compared).
       - name: Fixture determinism check

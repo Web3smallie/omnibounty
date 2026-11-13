@@ -156,10 +156,48 @@ export function setE2EBountyView(bv) {
 class FixtureNear {
   constructor(views) {
     this.views = views;
+    // Index signed vouchers by slot. `unrelayed` entries carry a top-level
+    // `slot`; `negatives[].signed` entries carry only `voucher.slot_index`.
+    this.viewsBySlot = new Map();
+    for (const v of views ?? []) {
+      const slot = v?.slot ?? v?.voucher?.slot_index ?? v?.voucher?.slot;
+      if (slot !== undefined && slot !== null && !this.viewsBySlot.has(Number(slot))) {
+        this.viewsBySlot.set(Number(slot), v);
+      }
+    }
   }
 
   async listUnrelayed() {
     return structuredClone(this.views);
+  }
+
+  // V2 discovery interface, mirroring the NEAR V3 views consumed by
+  // Relayer.discoverVouchersV2/discoverMaturedClaims: bounty enumeration,
+  // then per-slot claim + signed-voucher reads.
+  async listBounties(_contractId, from, limit) {
+    if (!E2E_BOUNTY_VIEW) return [];
+    return structuredClone([E2E_BOUNTY_VIEW]).slice(from, from + limit);
+  }
+
+  async getClaim(_contractId, bountyId, slot) {
+    if (!E2E_BOUNTY_VIEW || Number(bountyId) !== E2E_BOUNTY_VIEW.id) return null;
+    if (!this.viewsBySlot.has(Number(slot))) return null;
+    // Realistic signed-claim view: the relayer reads signed/pending_digest/
+    // challenge_ends_at for discovery; handleOne never touches the claim.
+    return {
+      bounty_id: E2E_BOUNTY_VIEW.id,
+      slot: Number(slot),
+      signed: true,
+      pending_digest: null,
+      challenge_ends_at: 0,
+      status: "signed",
+    };
+  }
+
+  async getVoucher(_contractId, bountyId, slot) {
+    if (!E2E_BOUNTY_VIEW || Number(bountyId) !== E2E_BOUNTY_VIEW.id) return null;
+    const v = this.viewsBySlot.get(Number(slot));
+    return v ? structuredClone(v) : null;
   }
 
   async getBounty(contractId, bountyId) {
