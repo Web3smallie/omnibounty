@@ -3213,7 +3213,10 @@ mod tests {
                 "https://api.github.com/user",
                 "application/vnd.github+json",
                 vec![
-                    ("regex".to_string(), "\"bio\":\"(?<id_login>[^\"]+)\"".to_string()),
+                    (
+                        "regex".to_string(),
+                        "\"bio\":\"(?<id_login>[^\"]+)\"".to_string(),
+                    ),
                     ("regex".to_string(), "id_is_(?<id_num>[0-9]+)".to_string()),
                 ],
                 serde_json::json!({"id_login": "acdlite", "id_num": "10001"})

@@ -261,7 +261,10 @@ pub(crate) fn close_ref_matcher(issue: &crate::criteria::IssueRule) -> (String, 
         .iter()
         .map(|k| format!("{} #{}", escape_regex_literal(k), issue.number))
         .collect();
-    ("regex".to_string(), format!("(?<close_ref>{})", alts.join("|")))
+    (
+        "regex".to_string(),
+        format!("(?<close_ref>{})", alts.join("|")),
+    )
 }
 
 /// Commitment marker matcher (`contains`, no captures), shared likewise.
@@ -713,7 +716,8 @@ fn matcher_captures(value: &str) -> Vec<String> {
         let pform = i + 4 <= bytes.len() && &bytes[i..i + 4] == b"(?P<";
         // Lookbehinds (`(?<=`, `(?<!`) share the `(?<` prefix but define
         // no group: a name never starts with `=` or `!`.
-        let lookaround = angle && i + 3 < bytes.len() && (bytes[i + 3] == b'=' || bytes[i + 3] == b'!');
+        let lookaround =
+            angle && i + 3 < bytes.len() && (bytes[i + 3] == b'=' || bytes[i + 3] == b'!');
         if (angle || tick || pform) && !lookaround {
             let closer = if tick { b'\'' } else { b'>' };
             let start = if pform { i + 4 } else { i + 3 };
@@ -2433,7 +2437,10 @@ mod tests {
             mandated_matchers(EvidenceType::CheckRun, &c, 7, "0xabc", 0),
             failing,
         );
-        for order in [vec![proof_a.clone(), proof_b.clone()], vec![proof_b, proof_a]] {
+        for order in [
+            vec![proof_a.clone(), proof_b.clone()],
+            vec![proof_b, proof_a],
+        ] {
             let mut proofs = vec![
                 pr_proof_for(&c, base_extracted()),
                 identity_proof("acdlite", "10001"),
@@ -2497,7 +2504,10 @@ mod tests {
                 ("app", "github-actions"),
             ]),
         );
-        for order in [vec![proof_a.clone(), proof_b.clone()], vec![proof_b, proof_a]] {
+        for order in [
+            vec![proof_a.clone(), proof_b.clone()],
+            vec![proof_b, proof_a],
+        ] {
             let proofs = vec![
                 pr_proof_for(&c, base_pr_ex.clone()),
                 head_proof.clone(),
@@ -2538,11 +2548,7 @@ mod tests {
             bound_m,
             bound_ex,
         );
-        let proofs = vec![
-            bound,
-            check_proof_for(),
-            identity_proof("acdlite", "10001"),
-        ];
+        let proofs = vec![bound, check_proof_for(), identity_proof("acdlite", "10001")];
         let (_, verdicts) = evaluate(&c, 7, "0xabc", &proofs, now).unwrap();
         assert!(first_failure(&verdicts).is_none(), "{verdicts:?}");
         // Split attack: matching value via custom matchers (no coverage)
@@ -2555,7 +2561,10 @@ mod tests {
         let forged = mk_proof(
             EvidenceType::Pr,
             format!("https://api.github.com/repos/{REPO}/pulls/38132"),
-            vec![("regex".to_string(), "\"body\":\"(?<close_ref>.*?)\"".to_string())],
+            vec![(
+                "regex".to_string(),
+                "\"body\":\"(?<close_ref>.*?)\"".to_string(),
+            )],
             forged_ex,
         );
         let mut bare_ex = base_extracted();
@@ -2728,7 +2737,10 @@ mod tests {
             EvidenceType::Review,
             url,
             vec![
-                ("regex".to_string(), "\"body\":\"(?<review_0_state>.*?)\"".to_string()),
+                (
+                    "regex".to_string(),
+                    "\"body\":\"(?<review_0_state>.*?)\"".to_string(),
+                ),
                 (
                     "regex".to_string(),
                     "\"x\":\"(?<review_0_commit>[0-9a-f]{40})\"".to_string(),
@@ -2773,7 +2785,10 @@ mod tests {
                 (&format!("review_{i}_commit"), HEAD),
             ]);
             if i == 1 {
-                map.insert("review_1_assoc".to_string(), Value::String("MEMBER".to_string()));
+                map.insert(
+                    "review_1_assoc".to_string(),
+                    Value::String("MEMBER".to_string()),
+                );
             }
             mk_proof(
                 EvidenceType::Review,
@@ -2848,7 +2863,11 @@ mod tests {
         // The un-split full set would NOT fit: documents why labels, the
         // close ref, and the commitment marker are enforced separately.
         let full = mandated_matchers(EvidenceType::Pr, &c, 7, "0xabc", 0);
-        assert!(full.len() > MAX_MATCHERS_PER_PROOF, "full set = {}", full.len());
+        assert!(
+            full.len() > MAX_MATCHERS_PER_PROOF,
+            "full set = {}",
+            full.len()
+        );
         assert_eq!(
             mandated_matchers(EvidenceType::CheckRun, &c, 7, "0xabc", 0).len(),
             6
@@ -2913,7 +2932,8 @@ mod tests {
         // binds rows to coverage, so row collection must fail.
         let c = files_criteria();
         let now = 1794421000;
-        let files_url = format!("https://api.github.com/repos/{REPO}/pulls/38132/files?per_page=100");
+        let files_url =
+            format!("https://api.github.com/repos/{REPO}/pulls/38132/files?per_page=100");
         let mut covering_incomplete = Vec::new();
         for k in 1..=2usize {
             covering_incomplete.push(("regex".to_string(), super::row_pattern(k)));
@@ -2944,7 +2964,10 @@ mod tests {
                 ("r2_del", "2"),
             ]),
         );
-        for order in [vec![proof_a.clone(), proof_b.clone()], vec![proof_b, proof_a]] {
+        for order in [
+            vec![proof_a.clone(), proof_b.clone()],
+            vec![proof_b, proof_a],
+        ] {
             let mut proofs = vec![
                 pr_with_changed(&c, 2),
                 check_proof_for(),
