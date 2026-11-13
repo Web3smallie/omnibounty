@@ -1,0 +1,28 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-prove/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"state\\\":\\\"(?<state>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794420583,
+    "context": "{\"extractedParameters\":{\"author\":\"acdlite\",\"merged\":\"true\",\"number\":\"38132\",\"repo\":\"react/react\",\"state\":\"closed\"},\"providerHash\":\"0xedc21c291b900cde20b4e3f6195a87a10fb2c25bd05b6a8445e4ff2e30f61050\"}",
+    "identifier": "0xcfb0f966ee7995d594f53e007394c33f7a31d3ce6401b287ee3eec833835ff0c",
+    "epoch": 1
+  },
+  "identifier": "0xcfb0f966ee7995d594f53e007394c33f7a31d3ce6401b287ee3eec833835ff0c",
+  "signatures": [
+    "0xbb9d888e5d9371a5bb7252f4639fdae15067e48cd3c5b5a230b91c780e09b4d73bc94e37ea1a1511f53dfe932da70ab2e78bb666d9814030df51d9ba97c2ad1a1c"
+  ],
+  "extractedParameterValues": {
+    "author": "acdlite",
+    "merged": "true",
+    "number": "38132",
+    "repo": "react/react",
+    "state": "closed"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

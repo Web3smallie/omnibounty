@@ -1,0 +1,25 @@
+{
+  "schema": "omnibounty/criteria",
+  "version": "1",
+  "title": "Time-boxed fix with challenge window",
+  "description": "Qualifying PRs must prove before 2030-01-01. Each qualification faces a 24h deterministic challenge window before finalization. Proofs older than 24h are rejected even though the protocol allows 7d.",
+  "repo": "react/react",
+  "merge_policy": "ci_verified",
+  "allow_forks": true,
+  "identity_policy": "commitment",
+  "checks": {
+    "required": [{ "name": "cleanup", "apps": ["github-actions"] }],
+    "max_age_sec": "86400"
+  },
+  "issue": {
+    "url": "https://github.com/react/react/issues/38131",
+    "require_close_reference": true,
+    "keywords": ["closes", "fixes", "resolves"]
+  },
+  "policy": "single_winner",
+  "slots": [{ "amount": "1000000" }],
+  "unfilled": "refund_sponsor",
+  "deadline": "1893456000",
+  "challenge_window_sec": "86400",
+  "evidence_max_age_sec": "86400"
+}

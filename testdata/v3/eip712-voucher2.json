@@ -1,0 +1,39 @@
+{
+  "_comment": "V2-independent VoucherV2 oracle vectors (ethers v6). Do not hand-edit; regenerate with tools/gen_v3_fixtures.mjs.",
+  "typeString": "VoucherV2(uint256 bountyId,uint8 slotIndex,address recipient,address token,uint256 amount,uint256 nonce,uint256 expiry,uint256 chainId,address escrow,bytes32 criteriaHash)",
+  "typeHash": "0x1455b35cc7864127c56d1e0d2f4e6172e7170aa94cb677c301415aac89954bfb",
+  "vectors": [
+    {
+      "tag": "slot2-weighted-first",
+      "bountyId": 7,
+      "slotIndex": 2,
+      "recipient": "0xcb234c6fc8abe3eb38e31eec6288b431e313d9b9",
+      "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "amount": "60000000",
+      "nonce": 1,
+      "expiry": 1794507005,
+      "chainId": 84532,
+      "escrow": "0x1111111111111111111111111111111111111111",
+      "criteriaHash": "0x499dcdccb8acfafe8d71e42ac91ab86cacbac30bf2b33c521b1bd47a31641d10",
+      "domainSeparator": "0x0793eeea296dd8c75263400620bff597bd093735b4da47854924a8159d8e85dd",
+      "structHash": "0x21f3290d3c918cb15fab6ae6e3b0d752c4d373b76112f98aa3b42c9824f31c4d",
+      "digest": "0x22c351086a99d27977186ca74a88e2108540310ab33a4139af38f062043cdedf"
+    },
+    {
+      "tag": "slot0-single-zero-nonce",
+      "bountyId": 1,
+      "slotIndex": 0,
+      "recipient": "0x0000000000000000000000000000000000000001",
+      "token": "0x036CbD53842c5426634e7929541eC2318f3dCF7e",
+      "amount": "1000000",
+      "nonce": 0,
+      "expiry": 1794424969,
+      "chainId": 84532,
+      "escrow": "0x1111111111111111111111111111111111111111",
+      "criteriaHash": "0xa08efc663519ac022a0b78ee2a38fcdf5eab35c2e48ef3a8e6c020aca38714e0",
+      "domainSeparator": "0x0793eeea296dd8c75263400620bff597bd093735b4da47854924a8159d8e85dd",
+      "structHash": "0x30a6b93af92852fbfbddac6e373513d092addb3b328e6343efc6014439c2e622",
+      "digest": "0xe12b82683d98c7f1dab79476a10798673554143e20eb5f9c188b945223c86c06"
+    }
+  ]
+}

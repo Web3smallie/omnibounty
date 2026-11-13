@@ -1,0 +1,26 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-p2-01/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"path\\\":\\\"(?<path>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<blob_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"size\\\":(?<size>[0-9]+)[,}]\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/contents/.github/workflows/compiler_discord_notify.yml?ref=5621284babc44ced80598504e7aae22f75fb32c1\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794427098,
+    "context": "{\"extractedParameters\":{\"blob_sha\":\"8d0a698c24f00b713f6c0e44f2951e4b4ac104a9\",\"path\":\".github/workflows/compiler_discord_notify.yml\",\"size\":\"2086\"},\"providerHash\":\"0x76fbaf80eadf2cb652d889dc15200984281adc3070febd9d7831524a80440aa1\"}",
+    "identifier": "0x280c612d4e99df5748987c565d2fe47534a455ea72fc5692d42f336284c54c16",
+    "epoch": 1
+  },
+  "identifier": "0x280c612d4e99df5748987c565d2fe47534a455ea72fc5692d42f336284c54c16",
+  "signatures": [
+    "0x860d8a6f58279efa2bbe7110fb321bc0a7c5e35417954be2d7bff3d626109dff2fc2a0a9e5e95bfe3ec765ab9f731d2885c9d64be4bb369ef15cd55fef913c221c"
+  ],
+  "extractedParameterValues": {
+    "blob_sha": "8d0a698c24f00b713f6c0e44f2951e4b4ac104a9",
+    "path": ".github/workflows/compiler_discord_notify.yml",
+    "size": "2086"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

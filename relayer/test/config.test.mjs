@@ -32,6 +32,12 @@ describe("config", () => {
     assert.throws(() => loadConfig({ ...baseEnv(), CONFIRMATIONS: "0" }), /invalid CONFIRMATIONS/);
   });
 
+  it("voucher version defaults to 1 and accepts 2", () => {
+    assert.equal(loadConfig(baseEnv()).voucherVersion, "1");
+    assert.equal(loadConfig({ ...baseEnv(), VOUCHER_VERSION: "2" }).voucherVersion, "2");
+    assert.throws(() => loadConfig({ ...baseEnv(), VOUCHER_VERSION: "3" }), /invalid VOUCHER_VERSION/);
+  });
+
   it("summary never contains the private key", () => {
     const env = baseEnv();
     const s = JSON.stringify(summarize(loadConfig(env)));

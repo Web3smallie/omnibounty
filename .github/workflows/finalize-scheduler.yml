@@ -1,0 +1,66 @@
+# V3 permissionless finalization keeper (scheduled, no dedicated service).
+#
+# Discovers matured claims (unsigned + challenge-expired) and runs one
+# finalize_claim per claim via tools/finalize_batch.mjs, which reuses the
+# audited one-shot tools/finalize.mjs core. Idempotent: already-signed
+# claims are skipped without transactions, races collapse into polling,
+# and failures retry on the next tick. Nothing here moves funds; USDC
+# still settles only through the Base relayer afterwards.
+#
+# Setup (one time, testnet):
+#   1. Fund a dedicated operator account (~1-2 NEAR; no special permissions).
+#   2. Repository Settings -> Secrets and variables -> Actions -> New secret:
+#        Name:  NEAR_OPERATOR_KEY_JSON
+#        Value: {"account_id": "<operator>.testnet", "private_key": "ed25519:..."}
+#      Single line. The key is used only to sign finalize_claim calls and
+#      is never printed (see script) and masked by Actions in logs.
+#
+# REVIEW DRAFT — enable by merging to the default branch (schedules only
+# run there). Observe the first live runs before relying on it.
+
+name: finalize-scheduler
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: v3-finalize
+  cancel-in-progress: false
+
+jobs:
+  finalize:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install near-api-js (via frontend deps)
+        run: npm ci --prefix frontend --no-audit --no-fund
+
+      - name: Write operator key (0600, never logged)
+        env:
+          NEAR_OPERATOR_KEY_JSON: ${{ secrets.NEAR_OPERATOR_KEY_JSON }}
+        run: |
+          test -n "$NEAR_OPERATOR_KEY_JSON" || { echo "missing NEAR_OPERATOR_KEY_JSON secret"; exit 1; }
+          mkdir -p secrets
+          printf '%s' "$NEAR_OPERATOR_KEY_JSON" > secrets/v3-operator.json
+          chmod 600 secrets/v3-operator.json
+
+      - name: Run batch finalizer
+        env:
+          NEAR_RPC_URL: https://rpc.testnet.near.org
+          NEAR_KEY_FILE: secrets/v3-operator.json
+        run: node tools/finalize_batch.mjs

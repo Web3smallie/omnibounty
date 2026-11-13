@@ -17,6 +17,8 @@ relayer/test/.tmp/
 
 # Rust
 contracts/near/target/
+contracts/near-v3/target/
+contracts/near-v3/tests/mock-mpc/target/
 contracts/near/tests/mock-mpc/target/
 contracts/near/fetch*.log
 contracts/near/test.log
@@ -32,6 +34,14 @@ contracts/near/tests/mock-mpc/Cargo.lock.mirror
 # Foundry
 contracts/base/out/
 contracts/base/cache/
+contracts/base-v3/out/
+contracts/base-v3/cache/
+.home-forge/
+# V3 integration harness outputs
+integration/out/
+integration/cache/
+integration/artifacts/
+integration/node_modules/
 contracts/base/broadcast/
 contracts/base/build.log
 contracts/base/test.log
@@ -40,6 +50,10 @@ contracts/base/lib/
 # Local cargo sandbox workaround (rebuilt by tools/local_registry.py)
 vendor/
 contracts/near/.cargo/
+# Windows-sandbox mirror config lives in CARGO_HOME (.cargo-home/), never
+# in the repo tree: a repo-local source replacement would leak Windows
+# paths into Linux checkouts. (Phase 5.1 follow-up.)
+contracts/near-v3/.cargo/
 
 # Secrets and local env
 .env

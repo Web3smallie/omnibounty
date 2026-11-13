@@ -84,4 +84,30 @@ redirect funds.
 - `components/` — wallet context (NEAR + EVM with Base Sepolia switching),
   marketplace grid, sponsor/claim flows, settlement tracker.
 - `lib/near.ts`, `lib/base.ts` — contract access; `lib/validation.mjs` +
-  `lib/display.mjs` — pure, dependency-free helpers shared with the tests.
+  `lib/display.mjs` + `lib/settlement.mjs` — pure, dependency-free helpers shared with the tests.
+
+## V3 demo flow (3-minute judging)
+
+V3 bounties render automatically when the on-chain view carries
+`criteria_hash` (V1 rendering is unchanged). The V3 journey is one submit:
+
+1. Generate both proofs with the SAME Reclaim app secret (the proof owner
+   derives from it, and every proof owner must equal the payout recipient):
+   `node scripts/prove.mjs <owner/repo> <pr> ./proof-pr.json` (7 mandated
+   PR extractions) and `GITHUB_TOKEN=<your-own-token> node
+   scripts/prove_identity.mjs ./proof-identity.json` (your login + numeric
+   id; the token stays on your machine and never enters the proof).
+2. Paste the claim bundle (`{ criteria_json, proofs }` with
+   `{ evidence_type: 1, proof }` + `{ evidence_type: 7, proof }` entries) —
+   Analyze shows the PR facts and verifies the identity binding.
+3. Submit once from the NEAR wallet (1 NEAR deposit + gas): the form first
+   runs the read-only `dry_qualify` preflight with the exact same arguments
+   and only opens the wallet approval when the contract reports success.
+4. The panel tracks qualifying → qualified → finalizing → signing →
+   settling → paid. Finalization is automatic: the relayer submits
+   permissionless `finalize_claim` on its next poll (demo bounties use
+   `challenge_window_sec: "0"`), and "paid" appears only after the Base
+   escrow confirms the payout. See `../docs/v3/FINALIZATION.md`.
+
+Point the app at V3 with `NEXT_PUBLIC_CONTRACT_ID=omnibounty-v3.testnet`
+(plus the V3 escrow address) in `.env.local`.

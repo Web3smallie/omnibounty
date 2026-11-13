@@ -1,0 +1,242 @@
+# V3 integration gate: NEAR contract + Base escrow + relayer + cross-chain e2e.
+#
+# REVIEW DRAFT — not pushed. Sandbox-dependent jobs (xsuite, e2e) run on
+# Linux only: near-sandbox has no Windows binary, and the e2e harness
+# targets POSIX shells for env plumbing.
+#
+# Local reproduction (Linux/macOS):
+#   NEAR:   cd contracts/near-v3 && cargo test --locked && <clippy/fmt/wasm/xsuite per job below>
+#   Base:   cd contracts/base-v3 && forge build && forge test
+#   Relayer: cd relayer && npm ci && npm test
+#   E2E:    cd integration && npm ci && npm run e2e:prepare \
+#             && (regen per its output) && npm run e2e
+
+name: v3-integration
+
+on:
+  push:
+    branches: [v3-rebuild]
+    paths:
+      - 'contracts/near-v3/**'
+      - 'contracts/base-v3/**'
+      - 'relayer/**'
+      - 'integration/**'
+      - 'testdata/v3/**'
+      - '.github/workflows/v3-integration.yml'
+  pull_request:
+    paths:
+      - 'contracts/near-v3/**'
+      - 'contracts/base-v3/**'
+      - 'relayer/**'
+      - 'integration/**'
+      - 'testdata/v3/**'
+  workflow_dispatch:
+
+jobs:
+  near-unit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: contracts/near-v3
+    steps:
+      - uses: actions/checkout@v4
+
+      # The sandbox-only cargo mirror must never be committed: CI resolves
+      # from crates.io against the committed lockfile.
+      - name: Refuse sandbox cargo config
+        run: |
+          test ! -f .cargo/config.toml || \
+            (echo 'contracts/near-v3/.cargo/config.toml is sandbox-only and must not be committed' >&2; exit 1)
+
+      - name: Install Rust stable + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+
+      # NOTE: rust-toolchain.toml pins stable (the lockfile needs rustc >=
+      # 1.88); `+stable` below is explicit belt-and-braces so CI never
+      # depends on ambient toolchain defaults.
+      - name: Unit tests (incl. golden parity + gas calibration)
+        run: cargo +stable test --locked
+
+      # Gas collection: re-run the measurement tests with --nocapture so
+      # the Linux (real-WASM-metered) GAS_*/equiv numbers land in the log
+      # for the host-vs-Linux comparison (docs/v3/NEAR_V3_DESIGN.md §8).
+      - name: Gas numbers (Linux, --nocapture)
+        run: |
+          cargo +stable test --locked --lib gas_ -- --nocapture
+          cargo +stable test --locked --lib storage_ -- --nocapture
+
+      - name: Clippy (zero warnings)
+        run: cargo +stable clippy --locked --all-targets -- -D warnings
+
+      - name: rustfmt
+        run: cargo +stable fmt --check
+
+  near-xsuite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    needs: near-unit
+    defaults:
+      run:
+        working-directory: contracts/near-v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      # WASM links require rustc 1.86: stable's wasm-ld errors on the
+      # NEAR env.* host imports (rustc dropped --allow-undefined from
+      # the default wasm32 link line after 1.86). Tests stay on stable
+      # (the lockfile needs rustc >= 1.88).
+      - name: Install Rust 1.86 + wasm target
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: 1.86.0
+          targets: wasm32-unknown-unknown
+
+      - name: Build contract wasm
+        run: cargo +1.86.0 build --locked --target wasm32-unknown-unknown --release
+
+      - name: Build mock-MPC wasm
+        run: >
+          cargo +1.86.0 build --locked
+          --target wasm32-unknown-unknown --release
+          --manifest-path tests/mock-mpc/Cargo.toml
+
+      # LLVM 19+ pads LEB128 immediates that sandbox 2.9.0's strict parser
+      # rejects with PrepareError(Deserialization) on first call; rewrite
+      # them to canonical form (V2-proven procedure, no semantic change).
+      - name: Canonicalize WASM LEB128
+        run: |
+          python3 ../../tools/canon_leb.py target/wasm32-unknown-unknown/release/omnibounty_v3.wasm target/wasm32-unknown-unknown/release/omnibounty_v3.wasm
+          python3 ../../tools/canon_leb.py tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm
+
+      # Fails immediately (non-zero exit) if any padded site remains.
+      - name: Verify canonical WASM
+        run: |
+          python3 ../../tools/canon_leb.py --check target/wasm32-unknown-unknown/release/omnibounty_v3.wasm
+          python3 ../../tools/canon_leb.py --check tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm
+
+      # Determinism gate: identical inputs must yield byte-identical
+      # fixtures (timestamps pinned via env, outputs compared).
+      - name: Fixture determinism check
+        run: |
+          export XSUITE_FIXTURE_TIME=1794440000
+          XSUITE_FIXTURE_PATH="$RUNNER_TEMP/fx1.json" \
+            cargo +stable test --locked --lib regen_xsuite_fixture -- --ignored --nocapture --exact tests::regen_xsuite_fixture
+          XSUITE_FIXTURE_PATH="$RUNNER_TEMP/fx2.json" \
+            cargo +stable test --locked --lib regen_xsuite_fixture -- --ignored --nocapture --exact tests::regen_xsuite_fixture
+          cmp "$RUNNER_TEMP/fx1.json" "$RUNNER_TEMP/fx2.json"
+
+      # Claim proofs carry 7-day evidence windows; the real fixture is a
+      # snapshot, regenerated fresh on every run.
+      - name: Regen xsuite claim fixture
+        run: cargo +stable test --locked --lib regen_xsuite_fixture -- --ignored --nocapture --exact tests::regen_xsuite_fixture
+
+      - name: Sandbox xsuite (5 scenarios)
+        run: cargo +stable test --locked --features xsuite --test xsuite
+        env:
+          RUST_BACKTRACE: 1
+
+  base-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: contracts/base-v3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Build escrow
+        run: forge build
+
+      - name: Unit, fuzz, and invariant tests
+        run: forge test
+
+      - name: Formatting
+        run: forge fmt --check
+
+  relayer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: relayer
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: relayer/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Unit tests (V1 + V2)
+        run: npm test
+
+  e2e-v3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [near-unit, base-v3, relayer]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: integration/package-lock.json
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install JS dependencies
+        run: |
+          (cd relayer && npm ci)
+          (cd integration && npm ci)
+
+      - name: Build escrow artifacts
+        working-directory: contracts/base-v3
+        run: forge build
+
+      - name: Prepare e2e addresses
+        working-directory: integration
+        run: npx hardhat run --no-compile scripts/e2e-v3-prepare.mjs
+
+      - name: Export e2e env
+        run: node -e 'const fs=require("fs"); const e=JSON.parse(fs.readFileSync("integration/out/e2e-env.json","utf8")); fs.appendFileSync(process.env.GITHUB_ENV,"E2E_ESCROW_ADDRESS="+e.escrow+"\nE2E_TOKEN_ADDRESS="+e.token+"\nE2E_CHAIN_ID="+e.chainId+"\n");'
+
+      - name: Regen e2e fixture
+        working-directory: contracts/near-v3
+        run: cargo +stable test --locked --lib regen_e2e_fixture -- --ignored --nocapture --exact tests::regen_e2e_fixture
+
+      - name: Run scenarios A-F
+        working-directory: integration
+        run: npx hardhat run --no-compile scripts/e2e-v3-run.mjs
+
+      - name: Upload execution trace
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: v3-e2e-trace
+          path: integration/out/v3-e2e-trace-*.json

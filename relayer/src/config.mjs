@@ -45,12 +45,30 @@ export function loadConfig(env = process.env) {
   const confirmations = Number(opt("CONFIRMATIONS", "2"));
   const maxAttempts = Number(opt("MAX_ATTEMPTS", "5"));
   const statePath = opt("STATE_PATH", "./relayer-state.json");
+  // Voucher protocol version: "1" (V2 escrow, default — preserves existing
+  // deployments with zero config change) or "2" (V3 escrow / VoucherV2).
+  const voucherVersion = opt("VOUCHER_VERSION", "1");
+  if (voucherVersion !== "1" && voucherVersion !== "2") {
+    throw new Error("invalid VOUCHER_VERSION: want 1 or 2");
+  }
   if (!Number.isFinite(pollIntervalMs) || pollIntervalMs < 1000) {
     throw new Error("invalid POLL_INTERVAL_MS");
   }
   if (!Number.isFinite(confirmations) || confirmations < 1) {
     throw new Error("invalid CONFIRMATIONS");
   }
+  // V3 auto-finalization (demo path): the relayer submits the permissionless
+  // `finalize_claim` for matured unsigned claims so qualification flows to
+  // MPC signing without a second claimant action or a scheduler tick. Active
+  // only in V2 mode when BOTH operator credentials are set; V1 deployments
+  // are unaffected even with these present. Set FINALIZE_ENABLED=false to
+  // run settlement-only.
+  const operatorAccountId = opt("NEAR_OPERATOR_ACCOUNT_ID", null);
+  const operatorPrivateKey = opt("NEAR_OPERATOR_PRIVATE_KEY", null);
+  if ((operatorAccountId == null) !== (operatorPrivateKey == null)) {
+    throw new Error("set NEAR_OPERATOR_ACCOUNT_ID and NEAR_OPERATOR_PRIVATE_KEY together");
+  }
+  const finalizeEnabled = opt("FINALIZE_ENABLED", "true") !== "false";
 
   return {
     nearRpcUrl,
@@ -66,10 +84,14 @@ export function loadConfig(env = process.env) {
     confirmations,
     maxAttempts,
     statePath,
+    voucherVersion,
+    operatorAccountId,
+    operatorPrivateKey,
+    finalizeEnabled,
   };
 }
 
-// Redacted summary for startup logs (NEVER includes the private key).
+// Redacted summary for startup logs (NEVER includes private keys).
 export function summarize(cfg) {
   return {
     nearRpcUrl: cfg.nearRpcUrl,
@@ -81,5 +103,8 @@ export function summarize(cfg) {
     expectedChainId: cfg.expectedChainId.toString(),
     pollIntervalMs: cfg.pollIntervalMs,
     confirmations: cfg.confirmations,
+    voucherVersion: cfg.voucherVersion,
+    finalizeEnabled: cfg.finalizeEnabled,
+    operatorAccountId: cfg.operatorAccountId,
   };
 }

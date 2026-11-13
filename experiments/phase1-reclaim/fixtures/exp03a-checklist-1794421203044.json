@@ -1,0 +1,26 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp03/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"cleanup\\\"[\\\\s\\\\S]*?\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"cleanup\\\"[\\\\s\\\\S]*?\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"total_count\\\":(?<total_count>.*?)[,}]\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/commits/5621284babc44ced80598504e7aae22f75fb32c1/check-runs?per_page=100\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421199,
+    "context": "{\"extractedParameters\":{\"conclusion\":\"success\",\"head_sha\":\"5621284babc44ced80598504e7aae22f75fb32c1\",\"total_count\":\"254\"},\"providerHash\":\"0xe85e35d5e249145b9519953fdc6c8202b9fa38f8a93e6778824666242bbbf7f3\"}",
+    "identifier": "0xeff4a91598bed726da3f3dc075c5d6a864f6d5617b6f6b49e9a5ec1dddf774b9",
+    "epoch": 1
+  },
+  "identifier": "0xeff4a91598bed726da3f3dc075c5d6a864f6d5617b6f6b49e9a5ec1dddf774b9",
+  "signatures": [
+    "0x151dbd0a83e8b227331f8c7465739379be923304dce369216df6ad3b0977cd866f2f70d42f6bd44c469cd2d76edf967ae41385b76f3966f1235888f37c21a7671b"
+  ],
+  "extractedParameterValues": {
+    "conclusion": "success",
+    "head_sha": "5621284babc44ced80598504e7aae22f75fb32c1",
+    "total_count": "254"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

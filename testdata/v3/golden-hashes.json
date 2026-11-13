@@ -1,0 +1,10 @@
+{
+  "deadline-challenge": "0x3d8fb46cbfab1de443a6b48170194232b5d92d3aabfdba8d0a122480c4eb1984",
+  "forbidden": "0x26358fa1edf56dc83af13481e7728524dd821eeff62a87eab2ec409f8c8b30b4",
+  "merged": "0xa08efc663519ac022a0b78ee2a38fcdf5eab35c2e48ef3a8e6c020aca38714e0",
+  "multi-check": "0xb2faa78b9e612379180c4ddbeaef01bf0e16cf5434337d30d8dd18b80c3f724b",
+  "multi-winner": "0x0bb7a10d0e546b97d3446549f757091d3b542cdb3d82c9340aeed2766eff8562",
+  "protected": "0x4053c69dc4811d45b4e9a591f5bdef4e18684a4b04a1f724c1dac9ae8cc0e8d1",
+  "simple-ci": "0x499dcdccb8acfafe8d71e42ac91ab86cacbac30bf2b33c521b1bd47a31641d10",
+  "weighted": "0x6ebec351a3fe476818517524cf3b025f6981582bfe7c58308e4ac297289fe3d6"
+}

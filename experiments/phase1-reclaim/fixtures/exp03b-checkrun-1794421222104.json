@@ -1,0 +1,30 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"User-Agent\":\"omnibounty-exp03/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"id\\\":(?<run_id>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"name\\\":\\\"(?<run_name>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"head_sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"status\\\":\\\"(?<status>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"conclusion\\\":\\\"(?<conclusion>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"completed_at\\\":\\\"(?<completed_at>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"app\\\":\\\\{[^}]*?\\\"slug\\\":\\\"(?<app>.*?)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/check-runs/128113730680\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421220,
+    "context": "{\"extractedParameters\":{\"app\":\"github-actions\",\"completed_at\":\"2026-11-06T19:43:59Z\",\"conclusion\":\"success\",\"head_sha\":\"5621284babc44ced80598504e7aae22f75fb32c1\",\"run_id\":\"128113730680\",\"run_name\":\"cleanup\",\"status\":\"completed\"},\"providerHash\":\"0x9572ae8cba51f721288c5acd7d5bdd3cc0b287e457037bcb2d75a7eb090704bd\"}",
+    "identifier": "0x07c9404f86ba95f723a3a0c1ffecf0394852e1df6c9941d78bd6809bc92e946d",
+    "epoch": 1
+  },
+  "identifier": "0x07c9404f86ba95f723a3a0c1ffecf0394852e1df6c9941d78bd6809bc92e946d",
+  "signatures": [
+    "0xd27a09380e6d31e7a7b36ca166121a271e71f41ce77f1a0e288b1bed9cced28e673df0ee7e8cbfc2b2cca64f0a8b91044b9b2ca444977f1ccfca5884cc0a47931c"
+  ],
+  "extractedParameterValues": {
+    "app": "github-actions",
+    "completed_at": "2026-11-06T19:43:59Z",
+    "conclusion": "success",
+    "head_sha": "5621284babc44ced80598504e7aae22f75fb32c1",
+    "run_id": "128113730680",
+    "run_name": "cleanup",
+    "status": "completed"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+[package]
+name = "omnibounty-v3"
+description = "OmniBounty NEAR V3 contract: task-first bounties, criteria-hash commitments, multi-proof claims, ordered winner slots, deterministic challenges, EIP-712 slot vouchers via Chain Signatures (MPC)."
+version = "1.0.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# `unstable` exposes env::ecrecover (additive SDK cfg; no stable-API change).
+# Production recovery is host-backed (src/ecrecover.rs) since Phase 5.1.
+near-sdk = { version = "5.1.0", features = ["unstable"] }
+# `derive` + `unstable__schema` for BorshSchema on ABI-surface types.
+borsh = { version = "1", features = ["derive", "unstable__schema"] }
+hex = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+schemars = "0.8"
+# Cross-contract suite ONLY (tests/xsuite.rs, feature `xsuite`).
+# Optional regular deps (cargo forbids optional dev-deps): never enabled for
+# the wasm build. Same pins/gating rationale as contracts/near.
+anyhow = { version = "=1.0.86", optional = true }
+near-workspaces = { version = "=0.21.0", optional = true }
+tokio = { version = "=1.38.0", features = ["macros", "rt-multi-thread"], optional = true }
+
+[dev-dependencies]
+near-sdk = { version = "5.1.0", features = ["unit-testing", "unstable"] }
+# Test-only since Phase 5.1 (production uses host ecrecover): fixture
+# signing + the k256 side of the equivalence harness.
+k256 = { version = "0.13", default-features = false, features = ["ecdsa"] }
+serde_json = "1"
+
+[features]
+xsuite = ["dep:anyhow", "dep:near-workspaces", "dep:tokio"]
+
+[[test]]
+name = "xsuite"
+path = "tests/xsuite.rs"
+required-features = ["xsuite"]
+
+[profile.release]
+codegen-units = 1
+opt-level = "z"
+lto = true
+debug = false
+panic = "abort"
+overflow-checks = true

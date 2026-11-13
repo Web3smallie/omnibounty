@@ -1,0 +1,24 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github.diff\",\"User-Agent\":\"omnibounty-exp08/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"diff --git (?<difffile>.*?)[\\\\n]\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/react/react/pulls/38132\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794421589,
+    "context": "{\"extractedParameters\":{\"difffile\":\"a/packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js b/packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js\"},\"providerHash\":\"0xc1dc9ec110721d52aa45a37d5f20a491a60b90d046e5aa94755f50e6f6053f72\"}",
+    "identifier": "0x229af7aba28cda0b3c4c70e9d6853557f5fa0ab2e8c0474218a44c5fc27bfb12",
+    "epoch": 1
+  },
+  "identifier": "0x229af7aba28cda0b3c4c70e9d6853557f5fa0ab2e8c0474218a44c5fc27bfb12",
+  "signatures": [
+    "0xa2752d5a9f01250a816cbfd4c26a52ca2fe51cb1135159ec929ac3c46421890f5f5a3cb4b8476e30297e117051a9a41111b4a9bd523588ec8573d207ce427b1c1c"
+  ],
+  "extractedParameterValues": {
+    "difffile": "a/packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js b/packages/react-dom/src/__tests__/ReactDOMFizzDeferredValue-test.js"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org/ws"
+    }
+  ]
+}

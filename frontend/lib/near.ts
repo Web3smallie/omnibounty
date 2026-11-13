@@ -50,6 +50,83 @@ export interface ConfigView {
   bounty_count: number;
 }
 
+// -- V3 views ----------------------------------------------------------
+
+export interface BountyViewV3 {
+  id: number;
+  sponsor: string;
+  token: string;
+  criteria_hash: string;
+  slots: string[];
+  slots_filled: number;
+  total_amount: string;
+  funded: boolean;
+  deadline: number;
+  challenge_window: number;
+  created_at: number;
+  seq: number;
+  status: string;
+}
+
+export interface ClaimViewV3 {
+  bounty_id: number;
+  slot: number;
+  recipient: string;
+  pr_number: number;
+  head_sha: string;
+  github_created: number;
+  claim_seq: number;
+  qualified_at: number;
+  challenge_ends_at: number;
+  status: string;
+  pending_digest: string | null;
+  signed: boolean;
+}
+
+export interface VoucherViewV2 {
+  bounty_id: number;
+  slot_index: number;
+  recipient: string;
+  token: string;
+  amount: string;
+  nonce: number;
+  expiry: number;
+  chain_id: number;
+  escrow: string;
+  criteria_hash: string;
+  digest: string;
+}
+
+export interface SignedVoucherViewV2 {
+  voucher: VoucherViewV2;
+  v: number;
+  r: string;
+  s: string;
+}
+
+// V3 dry-run outcome (DryOutcome): read-only, never panics on user input.
+// `ok` is true only when every check passed; otherwise `errors` holds the
+// stable CODE strings and `verdicts` the per-criterion detail.
+export interface DryVerdictView {
+  id: string;
+  status: string;
+  detail: string;
+}
+
+export interface DryOutcomeV3 {
+  ok: boolean;
+  bounty_id: number;
+  pr_number: number | null;
+  head_sha: string | null;
+  verdicts: DryVerdictView[];
+  errors: string[];
+}
+
+export interface ContractProofArg {
+  evidence_type: number;
+  proof: unknown;
+}
+
 function utf8ToBase64(s: string): string {
   const bytes = new TextEncoder().encode(s);
   let bin = "";
@@ -110,6 +187,21 @@ export const listUnrelayed = (limit = 50) =>
 export const isIdentifierUsed = (identifierHex: string) =>
   nearView<boolean>("is_identifier_used", { identifier_hex: identifierHex });
 
+// V3 views (slot-scoped claims and vouchers). A view-call of `qualify_claim`
+// itself would always fail the storage-deposit check (views attach zero
+// deposit), so preflight goes through the dedicated read-only `dry_qualify`
+// view, which runs the exact qualify pipeline without mutating state.
+export const dryQualifyV3 = (bountyId: number, criteriaJson: string, proofs: ContractProofArg[], recipient: string) =>
+  nearView<DryOutcomeV3>("dry_qualify", { bounty_id: bountyId, criteria_json: criteriaJson, proofs, recipient });
+export const getBountyV3 = (bountyId: number) =>
+  nearView<BountyViewV3 | null>("get_bounty", { bounty_id: bountyId });
+export const getClaim = (bountyId: number, slot: number) =>
+  nearView<ClaimViewV3 | null>("get_claim", { bounty_id: bountyId, slot });
+export const getClaimByPr = (bountyId: number, prNumber: number) =>
+  nearView<number | null>("get_claim_by_pr", { bounty_id: bountyId, pr_number: prNumber });
+export const getVoucherV3 = (bountyId: number, slot: number) =>
+  nearView<SignedVoucherViewV2 | null>("get_voucher", { bounty_id: bountyId, slot });
+
 // -- Wallet (client-side only; dynamically imported by components) ---------
 
 export type { WalletSelector } from "@near-wallet-selector/core";
@@ -154,6 +246,11 @@ export function showWalletModal(selector: unknown) {
 
 const CLAIM_GAS = "150000000000000"; // 150 Tgas = contract CLAIM_MIN_GAS
 
+// V3 qualify_claim: 300 Tgas + 1 NEAR, mirroring the XSuite helper (which
+// proves 1 NEAR covers qualification storage; dust deposits fail).
+export const QUALIFY_GAS = "300000000000000";
+export const QUALIFY_DEPOSIT_YOCTO = "1000000000000000000000000";
+
 export interface NearTxReceipt {
   txHash: string | null;
   outcome: unknown;
@@ -163,7 +260,8 @@ export async function signAndSend(
   selector: import("@near-wallet-selector/core").WalletSelector,
   methodName: string,
   args: Record<string, unknown>,
-  depositYocto = "0"
+  depositYocto = "0",
+  gas = CLAIM_GAS
 ): Promise<NearTxReceipt> {
   const wallet = await selector.wallet();
   const outcome = await wallet.signAndSendTransaction({
@@ -171,7 +269,7 @@ export async function signAndSend(
     actions: [
       {
         type: "FunctionCall",
-        params: { methodName, args, gas: CLAIM_GAS, deposit: depositYocto },
+        params: { methodName, args, gas, deposit: depositYocto },
       },
     ],
   });

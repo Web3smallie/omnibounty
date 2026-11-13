@@ -1,5 +1,10 @@
 # OmniBounty verification report
 
+> Scope note: this evidence log covers the V1-era verification only
+> (`contracts/near`, `contracts/base`, Phase 1 fixtures). It is retained as
+> historical evidence. V3 verification lives in the suite outputs, XSuite
+> traces, and `docs/v3/` notes referenced from the root README.
+
 Evidence log for independent Phase 1 verification. Every claim below is tied
 to a command, a fixture, or an observed output. Nothing in this file is
 aspirational: unproven items are listed under Outstanding.
