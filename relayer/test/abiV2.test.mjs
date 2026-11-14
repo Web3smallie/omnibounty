@@ -12,9 +12,15 @@ import { ESCROW_ABI_V1, ESCROW_ABI_V2 } from "../src/index.mjs";
 // relayer suite bypasses real decoding, so this file pins true
 // chain-shaped decoding plus selector parity with the compiled artifact.
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ARTIFACT = JSON.parse(
-  readFileSync(join(HERE, "..", "..", "contracts", "base-v3", "out", "OmniEscrowV2.sol", "OmniEscrowV2.json"), "utf8")
-);
+const ARTIFACT_PATH = join(HERE, "..", "..", "contracts", "base-v3", "out", "OmniEscrowV2.sol", "OmniEscrowV2.json");
+let ARTIFACT;
+try {
+  ARTIFACT = JSON.parse(readFileSync(ARTIFACT_PATH, "utf8"));
+} catch {
+  throw new Error(
+    `missing compiled escrow artifact (${ARTIFACT_PATH}): run \`cd contracts/base-v3 && forge build\` first (scripts/setup.sh does this)`
+  );
+}
 const TUPLE = "tuple(address,address,uint64,bytes32,bool,uint256,uint256[],uint256,uint256)";
 const TOKEN = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
 const SPONSOR = "0x1111111111111111111111111111111111111111";

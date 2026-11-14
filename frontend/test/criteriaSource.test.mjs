@@ -141,7 +141,7 @@ describe("criteria artifact retrieval", () => {
 
 describe("served demo criteria artifact", () => {
   const ARTIFACT = "frontend/public/criteria/0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6.json";
-  const EVIDENCE = "audit-backup-20261113/proofs/demo-criteria.json";
+  const EVIDENCE = "evidence/e2e-run4/proofs/demo-criteria.json";
 
   it("is byte-identical to the documented RUN4 evidence (no fabrication)", () => {
     assert.equal(read(ARTIFACT), read(EVIDENCE));

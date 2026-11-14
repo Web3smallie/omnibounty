@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 # OmniBounty canonical fresh-machine setup (Linux only).
 #
-# Installs user-level toolchains, installs JS dependencies, generates
-# disposable testnet identities, and smoke-checks RPC reachability. Sends
-# no transactions, funds nothing, deploys nothing. Safe to re-run:
+# Installs user-level toolchains, installs JS dependencies, builds the
+# escrow artifacts relayer tests need, generates disposable testnet
+# identities, and smoke-checks RPC reachability. Sends no transactions,
+# funds nothing, deploys nothing. Safe to re-run:
 # every step skips work that already exists (except `npm ci`, which only
 # runs when node_modules/ is missing).
 #
@@ -60,7 +61,7 @@ foundryup
 forge --version
 pass "foundry ready ($(forge --version | head -n1))"
 
-echo "==> 4/6 JS dependencies"
+echo "==> 4/7 JS dependencies"
 for pkg in frontend relayer tools integration; do
   if [ -d "$pkg/node_modules" ]; then
     note "$pkg/node_modules present, skipping npm ci"
@@ -75,7 +76,15 @@ else
 fi
 pass "JS dependencies + legacy forge-std ready"
 
-echo "==> 5/6 disposable testnet identities"
+echo "==> 5/7 escrow build artifacts (needed by relayer tests)"
+if [ -f contracts/base-v3/out/OmniEscrowV2.sol/OmniEscrowV2.json ]; then
+  note "base-v3 artifacts present, skipping forge build"
+else
+  (cd contracts/base-v3 && forge build)
+fi
+pass "escrow artifacts ready"
+
+echo "==> 6/7 disposable testnet identities"
 if node scripts/keygen.mjs; then
   pass "fresh identities generated in secrets/ (0600, gitignored)"
 else
@@ -87,7 +96,7 @@ else
   fi
 fi
 
-echo "==> 6/6 RPC smoke check (read-only)"
+echo "==> 7/7 RPC smoke check (read-only)"
 code_hash="$(curl -s -m 25 -X POST https://rpc.testnet.near.org -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":"setup","method":"query","params":{"request_type":"view_account","finality":"final","account_id":"omnibounty-v3.testnet"}}' \
   | python3 -c 'import json,sys; print(json.load(sys.stdin)["result"]["code_hash"])')"

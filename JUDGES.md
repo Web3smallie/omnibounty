@@ -212,11 +212,12 @@ git clone https://github.com/Web3smallie/omnibounty omnibounty && cd omnibounty
 python3 node(≥22) npm`, installs the Rust toolchains (`stable`, `1.86.0`,
 `wasm32-unknown-unknown` target, `rustfmt`/`clippy`), installs Foundry,
 runs `npm ci` in `frontend relayer tools integration`, vendors legacy
-`forge-std`, generates disposable identities (§6), and smoke-checks both
-RPC endpoints. It sends no transactions and is safe to re-run. It needs a
-network connection (toolchain + package downloads) and a pre-installed
-Node ≥ 22 (Ubuntu: `sudo apt-get install -y curl git python3
-build-essential pkg-config`, then Node via nvm or nodejs.org).
+`forge-std`, builds the escrow artifacts the relayer tests read,
+generates disposable identities (§6), and smoke-checks both RPC endpoints.
+It sends no transactions and is safe to re-run. It needs a network
+connection (toolchain + package downloads) and a pre-installed Node ≥ 22
+(Ubuntu: `sudo apt-get install -y curl git python3 build-essential
+pkg-config libudev-dev`, then Node via nvm or nodejs.org).
 
 Honest scope note: `setup.sh` was assembled from individually verified
 steps but has NOT been validated with a from-scratch container run (no
