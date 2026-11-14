@@ -13,6 +13,7 @@ directory.
 
 Contents:
 - `E2E-RUN5.md` — the run record (every tx hash + explorer link).
+- `VERIFY-RUN5.md` — independent re-verification: fresh RPC queries and outputs confirming the payout and deployed bytecode.
 - `DEPLOYED.md` — corrected-WASM deployment record (code hash, states).
 - `proofs4/` — the run's live PR + identity proofs and issued voucher.
 - `proofs/` — demo criteria (reused, hash-identical), current dry-run

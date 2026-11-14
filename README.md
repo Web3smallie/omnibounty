@@ -282,7 +282,7 @@ sessions (new PR identifier `0x4555…`), NEAR claim, MPC-signed voucher
 (nonce 7, digest `0x15a3…dc7e0`), and 1-USDC settlement by the deployed
 Render relayer ([payout tx](https://sepolia.basescan.org/tx/0x3f171afb6649b3d0432bd4eaabdb90ede5fd2e871248a6153b89edc5024037e1),
 block 58721205). Full record with every transaction hash, wallet, and
-verification step: `evidence/e2e-run5/E2E-RUN5.md` (17/17 checksums
+verification step: `evidence/e2e-run5/E2E-RUN5.md` (18/18 checksums
 verify).
 
 Run 5 demonstrates the deployed contracts, live MPC signing, and escrow

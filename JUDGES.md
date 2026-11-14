@@ -352,7 +352,7 @@ hash and explorer link: `evidence/e2e-run5/E2E-RUN5.md` (checksummed in
 Judge verification (read-only, no keys):
 
 ```sh
-cd evidence/e2e-run5 && sha256sum -c SHA256SUMS   # expect 17 OK lines
+cd evidence/e2e-run5 && sha256sum -c SHA256SUMS   # expect 18 OK lines
 ```
 
 then §2: the five NEAR views against bounty `414201122891941` (sponsor,
