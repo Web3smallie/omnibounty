@@ -73,6 +73,15 @@ describe("CSP origin inventory (P2-6)", () => {
     }
   });
 
+  it("covers the configured NEAR indexer origin", () => {
+    const configSrc = read("frontend/lib/config.ts");
+    const m = configSrc.match(/NEAR_INDEXER_URLS = \{[\s\S]*?testnet: "(https:\/\/[^"]+)"/);
+    assert.ok(m, "config.ts must pin a testnet indexer default");
+    assert.equal(m[1], "https://api-testnet.nearblocks.io");
+    const connect = directives()["connect-src"];
+    assert.ok(connect.includes(m[1]), `connect-src must cover configured indexer ${m[1]}`);
+  });
+
   it("covers wallet integration origins precisely", () => {
     const d = directives();
     assert.ok(d["connect-src"].includes("https://h4n.app"), "HERE proxy API covered for non-injected flows");

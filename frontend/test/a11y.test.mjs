@@ -107,7 +107,7 @@ describe("non-urgent status announcements (P2-5)", () => {
       ["frontend/components/ReturningClaimTracker.tsx", "No claim from the connected wallet yet"],
       ["frontend/components/ReturningClaimTracker.tsx", "tracking it below"],
       ["frontend/components/Marketplace.tsx", "No bounties match this search"],
-      ["frontend/components/CriteriaDetails.tsx", "hasn&apos;t published the criteria document"],
+      ["frontend/components/CriteriaDetails.tsx", "could not be resolved automatically"],
       ["frontend/components/SettlementPanel.tsx", "Settlement check paused"],
     ];
     for (const [f, snippet] of ok) {

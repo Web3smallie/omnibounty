@@ -21,6 +21,7 @@ import {
 } from "../lib/base";
 import { buildCriteriaDocument, isV3ContractConfig, reconcileSponsorV3, runSponsorV3Flow, validateSponsorV3Form } from "../lib/sponsorV3.mjs";
 import { waitForTxReceipt } from "../lib/txConfirm.mjs";
+import { getSharedResolver } from "../lib/criteriaResolve.mjs";
 import { config } from "../lib/config";
 import { useWallets } from "./wallets";
 import { ExtLink, LoadingDots } from "./ui";
@@ -38,6 +39,118 @@ const STEP_LABELS = [
 ] as const;
 
 const isNearStep = (i: number) => i === 0 || i === 4;
+
+/// Snapshot of one completed sponsorship: the canonical document the form
+/// committed plus where it lives on-chain. Simple and Advanced modes both
+/// land here — validateSponsorV3Form canonicalizes either input first.
+type PublishFacts = {
+  bountyId: number;
+  hash: string;
+  criteriaJson: string;
+  createTxHash: string | null;
+  signer: string | null;
+};
+
+type PublishStatus =
+  | { kind: "verifying" }
+  | { kind: "verified"; source: string }
+  | { kind: "failed"; message: string };
+
+/// Sponsor-side publication proof. The creation transaction permanently
+/// embeds the canonical criteria JSON, so publication is automatic — this
+/// panel seeds the shared verified cache and then proves the SAME
+/// universal resolver contributors use returns this exact document.
+/// Honest states only: verified, still verifying, or failed-with-retry.
+function PublishVerifyPanel({ facts }: { facts: PublishFacts }) {
+  const [status, setStatus] = useState<PublishStatus>({ kind: "verifying" });
+  const [retry, setRetry] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let live = true;
+    setStatus({ kind: "verifying" });
+    const shared = getSharedResolver({
+      fetchImpl: fetch,
+      indexerBaseUrl: config.indexerBaseUrl,
+      contractId: config.contractId,
+      nearRpcUrl: config.nearRpcUrl,
+    });
+    try {
+      shared.cache.storeDocument(facts.hash, facts.criteriaJson);
+      if (facts.createTxHash && facts.signer) {
+        shared.cache.storeCreateTx(facts.bountyId, { txHash: facts.createTxHash, signer: facts.signer });
+      }
+    } catch {
+      // Cache failures never fail the publication proof below.
+    }
+    shared
+      .resolve({
+        bountyId: facts.bountyId,
+        criteriaHash: facts.hash,
+        ...(facts.createTxHash && facts.signer
+          ? { createTxHash: facts.createTxHash, signer: facts.signer }
+          : {}),
+      })
+      .then((r: { ok: boolean; source?: string; reason?: string; detail?: string }) => {
+        if (!live) return;
+        if (r.ok) setStatus({ kind: "verified", source: typeof r.source === "string" ? r.source : "cache" });
+        else setStatus({ kind: "failed", message: r.detail ?? r.reason ?? "verification failed" });
+      })
+      .catch((e: unknown) => {
+        if (live) setStatus({ kind: "failed", message: e instanceof Error ? e.message : String(e) });
+      });
+    return () => {
+      live = false;
+    };
+  }, [facts, retry]);
+
+  async function copyJson() {
+    try {
+      await navigator.clipboard.writeText(facts.criteriaJson);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+    }
+  }
+
+  return (
+    <div className="notice" role="status">
+      {status.kind === "verifying" && <LoadingDots label="Verifying contributors can retrieve these criteria" />}
+      {status.kind === "verified" && (
+        <div>
+          <strong>Published.</strong> Contributors retrieve these criteria automatically (verified via{" "}
+          {status.source}
+          {facts.createTxHash ? (
+            <>
+              {" "}from creation transaction{" "}
+              <ExtLink href={nearTxUrl(config.networkId, facts.createTxHash)}>
+                <code>{facts.createTxHash.slice(0, 18)}… ↗</code>
+              </ExtLink>
+            </>
+          ) : (
+            <> through transaction-anchored recovery</>
+          )}
+          ). The document is re-verified against the on-chain hash on every use.
+        </div>
+      )}
+      {status.kind === "failed" && (
+        <div>
+          Automatic retrieval could not be verified yet: {status.message}{" "}
+          <button type="button" onClick={() => setRetry((n) => n + 1)}>
+            Retry verification
+          </button>{" "}
+          The canonical document remains embedded in the creation transaction — nothing is lost.
+        </div>
+      )}
+      <div>
+        <button type="button" onClick={() => void copyJson()}>
+          {copied ? "Criteria JSON copied" : "Copy canonical criteria JSON"}
+        </button>{" "}
+        <span className="muted small">Manual fallback if a contributor ever needs the file directly.</span>
+      </div>
+    </div>
+  );
+}
 
 export default function SponsorFormV3() {
   const { nearAccount, connectNear, nearStatus, nearError, retryNear, evmAddress, evmOnBaseSepolia, connectEvm, switchEvmNetwork } =
@@ -81,6 +194,7 @@ export default function SponsorFormV3() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState("");
   const [ranFor, setRanFor] = useState<string | null>(null);
+  const [published, setPublished] = useState<PublishFacts | null>(null);
   const busyRef = useRef(createBusyGuard());
   const mountedRef = useRef(true);
   const liveRef = useRef({ nearAccount, evmAddress, evmOnBaseSepolia });
@@ -154,6 +268,7 @@ export default function SponsorFormV3() {
     if (!sameRun) {
       setSteps(STEP_LABELS.map(() => ({ status: "idle" as const })));
       setRanFor(runKey);
+      setPublished(null);
     }
 
     // Preflight + resume reconciliation: read live state on both chains,
@@ -196,6 +311,13 @@ export default function SponsorFormV3() {
       if (rec.adopted.every(Boolean)) {
         setNote("");
         setPhase("done");
+        setPublished({
+          bountyId: params.bountyId,
+          hash: params.hash,
+          criteriaJson: params.criteriaJson,
+          createTxHash: null,
+          signer: nearAccount,
+        });
         setBusy(false);
         return;
       }
@@ -300,6 +422,13 @@ export default function SponsorFormV3() {
         return;
       }
       setPhase("done");
+      setPublished({
+        bountyId: params.bountyId,
+        hash: params.hash,
+        criteriaJson: params.criteriaJson,
+        createTxHash: out.txs[0] ?? null,
+        signer: nearAccount,
+      });
       setNote("");
     } catch (e) {
       if (!mountedRef.current) return;
@@ -661,6 +790,7 @@ export default function SponsorFormV3() {
             <a href={`/bounties/${bountyId}`}>Open the bounty page →</a>
           </div>
         )}
+        {phase === "done" && published && <PublishVerifyPanel facts={published} />}
       </div>
 
       <aside className="preview card">

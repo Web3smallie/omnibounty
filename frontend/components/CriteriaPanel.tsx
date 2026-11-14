@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LoadingDots } from "./ui";
+import { config } from "../lib/config";
 import { shortenAddress } from "../lib/display.mjs";
 
 type CriteriaResult =
@@ -9,7 +10,7 @@ type CriteriaResult =
   | { ok: false; reason: string; detail?: string };
 
 const REASON_COPY: Record<string, string> = {
-  missing: "No published criteria file matches this bounty.",
+  missing: "No criteria could be resolved automatically for this bounty (no served artifact, no discoverable creation transaction).",
   unavailable: "Criteria lookup failed.",
   malformed: "Criteria is not valid JSON.",
   invalid: "Criteria failed schema validation.",
@@ -61,9 +62,11 @@ function CriteriaSummary({ doc }: { doc: Record<string, unknown> }) {
 
 /// V3 criteria retrieval: the contract stores only the criteria_hash, so
 /// the full document must come from off-chain and be verified before use.
-/// Tries the served criteria artifact first, otherwise (or additionally)
-/// verifies claimant-pasted JSON. Reports verified text (or null) upward;
-/// nothing unverified is ever attached to the claim.
+/// Resolves through the shared universal resolver (verified cache ->
+/// served artifact -> transaction-anchored recovery — the same source the
+/// bounty details page uses), otherwise verifies claimant-pasted JSON.
+/// Reports verified text (or null) upward; nothing unverified is ever
+/// attached to the claim.
 export default function CriteriaPanel({
   bountyId,
   criteriaHash,
@@ -82,9 +85,15 @@ export default function CriteriaPanel({
     let live = true;
     setAuto(null);
     setPastedResult(null);
-    import("../lib/criteriaSource.mjs")
-      .then(async ({ fetchCriteriaDocument }) => {
-        const r = (await fetchCriteriaDocument(criteriaHash)) as CriteriaResult;
+    import("../lib/criteriaResolve.mjs")
+      .then(async ({ getSharedResolver }) => {
+        const shared = getSharedResolver({
+          fetchImpl: fetch,
+          indexerBaseUrl: config.indexerBaseUrl,
+          contractId: config.contractId,
+          nearRpcUrl: config.nearRpcUrl,
+        });
+        const r = (await shared.resolve({ bountyId, criteriaHash })) as CriteriaResult;
         if (live) setAuto(r);
       })
       .catch((e: unknown) => {

@@ -1,0 +1,20 @@
+{
+  "simple": {
+    "bountyId": 9001,
+    "hash": "0x1741802f462d08446cef5ac23668dd0f1eb0057348994ea03f92a3986dc77d24",
+    "txHash": "4Q7y7v8w9x0y1z2a3b4c5d6e7f8g9h0j1k2m3n4o5p6",
+    "signer": "sponsor-a.testnet"
+  },
+  "advanced": {
+    "bountyId": 9002,
+    "hash": "0xfe9da4fd82cfe948d520e809b1188e83f80af7d6f148ec93c28aa49260319d37",
+    "txHash": "9Z8y7x6w5v4u3t2s1r0q9p8o7n6m5l4k3j2i1h0g9f",
+    "signer": "sponsor-b.testnet"
+  },
+  "valen": {
+    "bountyId": 414201122891942,
+    "hash": "0x0fa2d3bc5fe25355f680ed62c534899904bfe172fa6856996178db35d2f7f2f4",
+    "txHash": "HFMhbrJ9BbPabEQWKDrqduqVkPxVxKyhwo2gCKgMu9qx",
+    "signer": "diaryofdero.testnet"
+  }
+}

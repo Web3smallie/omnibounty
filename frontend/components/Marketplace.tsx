@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { BountyView, BountyViewV3 } from "../lib/near";
+import { config } from "../lib/config";
+import { getSharedResolver } from "../lib/criteriaResolve.mjs";
 import { escrowBountyState, escrowBountyStateV2 } from "../lib/base";
 import type { EscrowBountyState } from "../lib/base";
 import { escrowReads } from "../lib/escrowPool.mjs";
@@ -74,6 +76,35 @@ export function BountyCard({ bounty }: { bounty: BountyView | BountyViewV3 }) {
   const amount = bountyCardAmountText(bounty);
   const prUrl = bountyCardPrUrl(bounty);
   const slots = bountyCardSlotsText(bounty);
+  // V3 cards upgrade from "Bounty #id" to the real criteria title/repo
+  // through the same shared resolver the Details and Claim pages use
+  // (verified cache -> artifact -> transaction recovery; concurrent
+  // cards share one contract scan). Unresolved cards keep the honest
+  // fallback — never a guessed title.
+  const [criteria, setCriteria] = useState<{ title: string; repo: string } | null>(null);
+  useEffect(() => {
+    if (!v3) return;
+    let live = true;
+    const criteriaHash = (bounty as BountyViewV3).criteria_hash;
+    const shared = getSharedResolver({
+      fetchImpl: fetch,
+      indexerBaseUrl: config.indexerBaseUrl,
+      contractId: config.contractId,
+      nearRpcUrl: config.nearRpcUrl,
+    });
+    shared.resolve({ bountyId: bounty.id, criteriaHash }).then(
+      (r: { ok: boolean; doc?: { title?: unknown; repo?: unknown } }) => {
+        if (!live || !r.ok || !r.doc) return;
+        const title = typeof r.doc.title === "string" ? r.doc.title : "";
+        const repo = typeof r.doc.repo === "string" ? r.doc.repo : "";
+        if (title !== "" || repo !== "") setCriteria({ title, repo });
+      },
+      () => {}
+    );
+    return () => {
+      live = false;
+    };
+  }, [bounty, v3]);
   return (
     <article className="card bounty-card">
       <div className="card-top">
@@ -85,7 +116,7 @@ export function BountyCard({ bounty }: { bounty: BountyView | BountyViewV3 }) {
         )}
       </div>
       <h3 className="bounty-title">
-        <a href={`/bounties/${bounty.id}`}>{v3 ? bountyTitleV3(bounty) : bountyTitle(bounty)}</a>
+        <a href={`/bounties/${bounty.id}`}>{v3 ? criteria?.title || bountyTitleV3(bounty) : bountyTitle(bounty)}</a>
       </h3>
       <div className="bounty-amount">{amount !== null ? `${amount} USDC` : "Amount unavailable"}</div>
       <div className="card-meta">
@@ -94,6 +125,7 @@ export function BountyCard({ bounty }: { bounty: BountyView | BountyViewV3 }) {
         {v3 ? (
           <>
             {slots !== null ? <span>{slots}</span> : null}
+            {criteria?.repo ? <span className="mono small">{criteria.repo}</span> : null}
             <span className="mono small" title={bounty.criteria_hash}>
               {shortenAddress(bounty.criteria_hash)}
             </span>

@@ -6,8 +6,11 @@ import path from "node:path";
 // Every origin below was inventoried from the shipped code, not guessed:
 // - connect-src: same-origin criteria artifacts + the two default RPC
 //   endpoints from lib/config.ts (NEXT_PUBLIC_NEAR_RPC_URL,
-//   NEXT_PUBLIC_BASE_RPC_URL) + https://h4n.app, the HERE wallet proxy
-//   API used by non-injected HERE flows (@here-wallet/core proxyApi).
+//   NEXT_PUBLIC_BASE_RPC_URL) + the default NEAR indexer for
+//   transaction-anchored criteria recovery
+//   (NEXT_PUBLIC_NEAR_INDEXER_URL, testnet host) + https://h4n.app,
+//   the HERE wallet proxy API used by non-injected HERE flows
+//   (@here-wallet/core proxyApi).
 //   Deliberately excluded: api.github.com (prove scripts run in node,
 //   the browser never fetches it), fastnear/helper hosts (only the
 //   wallet-modal Ledger path touches them, and Ledger is not configured),
@@ -33,15 +36,16 @@ import path from "node:path";
 // (Reclaim proof generation runs in node scripts; the browser only
 // pastes and validates JSON, so CSP cannot affect it).
 //
-// Custom RPC deployments: if NEXT_PUBLIC_NEAR_RPC_URL or
-// NEXT_PUBLIC_BASE_RPC_URL point anywhere but the defaults below,
-// extend connect-src accordingly. No report-uri is configured (no
-// collection endpoint exists); triage via devtools.
+// Custom RPC deployments: if NEXT_PUBLIC_NEAR_RPC_URL,
+// NEXT_PUBLIC_BASE_RPC_URL, or NEXT_PUBLIC_NEAR_INDEXER_URL point
+// anywhere but the defaults below, extend connect-src accordingly. No
+// report-uri is configured (no collection endpoint exists); triage via
+// devtools.
 const REPORT_ONLY_CSP = [
   "default-src 'self'",
   "script-src 'self'",
   "style-src 'self' https://fonts.googleapis.com",
-  "connect-src 'self' https://rpc.testnet.near.org https://sepolia.base.org https://h4n.app",
+  "connect-src 'self' https://rpc.testnet.near.org https://sepolia.base.org https://api-testnet.nearblocks.io https://h4n.app",
   "img-src 'self'",
   "font-src 'self' https://fonts.gstatic.com",
   "frame-src https://my.herewallet.app",

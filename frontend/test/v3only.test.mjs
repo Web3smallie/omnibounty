@@ -91,9 +91,9 @@ describe("contributor bounty details wiring", () => {
   const details = read("components/CriteriaDetails.tsx");
 
   it("renders hash-verified task information with honest fallbacks", () => {
-    assert.ok(details.includes("fetchCriteriaDocument"), "loads the served criteria artifact");
+    assert.ok(details.includes("getSharedResolver"), "resolves through the shared universal resolver");
     assert.ok(details.includes("Loading the bounty description"), "loading state is explicit");
-    assert.ok(details.includes("published the criteria document"), "missing artifact stays honest");
+    assert.ok(details.includes("could not be resolved automatically"), "unresolvable criteria stay honest");
     assert.ok(details.includes("Retry"), "failed loads offer retry");
     for (const token of ["doc.title", "doc.description", "doc.repo", "doc.issue", "merge_policy"]) {
       assert.ok(details.includes(token), `renders verified ${token}`);

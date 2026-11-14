@@ -1,0 +1,32 @@
+{
+  "txHash": "Failed11111111111111111111111111111111111111",
+  "signer": "sponsor-a.testnet",
+  "rpc": {
+    "result": {
+      "status": {
+        "Failure": {
+          "ActionError": {
+            "kind": "FunctionCallError",
+            "FunctionCallError": {
+              "ExecutionError": "BountyExists"
+            }
+          }
+        }
+      },
+      "transaction": {
+        "signer_id": "sponsor-a.testnet",
+        "receiver_id": "omnibounty-v3.testnet",
+        "actions": [
+          {
+            "FunctionCall": {
+              "method_name": "create_bounty",
+              "args": "eyJib3VudHlfaWQiOjkwMDEsInRva2VuIjoiMHgwMzZDYkQ1Mzg0MmM1NDI2NjM0ZTc5Mjk1NDFlQzIzMThmM2RDRjdlIiwiY3JpdGVyaWFfanNvbiI6IntcImFsbG93X2ZvcmtzXCI6ZmFsc2UsXCJhdXRob3JfYXNzb2NpYXRpb25cIjpbXCJNRU1CRVJcIixcIkNPTExBQk9SQVRPUlwiLFwiQ09OVFJJQlVUT1JcIl0sXCJiYXNlX2NvbW1pdFwiOlwiMDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWYwMTIzNDU2N1wiLFwiY2hhbGxlbmdlX3dpbmRvd19zZWNcIjpcIjM2MDBcIixcImNoZWNrc1wiOntcIm1heF9hZ2Vfc2VjXCI6XCI4NjQwMFwiLFwicmVxdWlyZWRcIjpbe1wiYXBwc1wiOltcImdpdGh1Yi1hZHZhbmNlZC1zZWN1cml0eVwiXSxcIm5hbWVcIjpcInNlY3VyaXR5LXNjYW5cIn0se1wiYXBwc1wiOltcImdpdGh1Yi1hY3Rpb25zXCJdLFwiZmFpbF9hdF9iYXNlXCI6dHJ1ZSxcIm5hbWVcIjpcInRlc3RzXCJ9XX0sXCJkZWFkbGluZVwiOlwiMTg5MzQ1NjAwMFwiLFwiZGVzY3JpcHRpb25cIjpcIkFkZCByYXRlIGxpbWl0aW5nIHRvIC9sb2dpbiwgd2l0aCB0ZXN0cyBhbmQgZG9jcy4gUmVxdWlyZXMgQ0kgZ3JlZW4sIHNlY3VyaXR5IHJldmlldywgYW5kIG5vIGNoYW5nZXMgb3V0c2lkZSBzcmMvYXV0aC8uXCIsXCJldmlkZW5jZV9tYXhfYWdlX3NlY1wiOlwiNjA0ODAwXCIsXCJmaWxlc1wiOntcImFsbG93ZWRfcGF0aHNcIjpbXCJzcmMvYXV0aC9cIl0sXCJmb3JiaWRkZW5fcGF0aHNcIjpbXCJzcmMvYmlsbGluZy9cIl0sXCJtYXhfY2hhbmdlZF9maWxlc1wiOlwiMTJcIixcInBhdGNoX2NvbnRhaW5zX2FsbFwiOltcInJhdGVMaW1pdFwiXSxcInByb3RlY3RlZFwiOlt7XCJibG9iX3NoYVwiOlwiYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYVwiLFwicGF0aFwiOlwic3JjL2F1dGgva2V5cy50c1wifV0sXCJyZXF1aXJlZF90b3VjaGVkXCI6W1wic3JjL2F1dGgvXCJdfSxcImlkZW50aXR5X3BvbGljeVwiOlwiY29tbWl0bWVudFwiLFwiaXNzdWVcIjp7XCJrZXl3b3Jkc1wiOltcImNsb3Nlc1wiXSxcInJlcXVpcmVfY2xvc2VfcmVmZXJlbmNlXCI6dHJ1ZSxcInVybFwiOlwiaHR0cHM6Ly9naXRodWIuY29tL29jdG9jYXQvSGVsbG8tV29ybGQvaXNzdWVzLzQyXCJ9LFwibGFiZWxzXCI6e1wicmVxdWlyZWRfYWxsXCI6W1wic2VjdXJpdHlcIl19LFwibWVyZ2VfcG9saWN5XCI6XCJtZXJnZWRcIixcInBvbGljeVwiOlwib3JkZXJlZF9zbG90c1wiLFwicmVwb1wiOlwib2N0b2NhdC9IZWxsby1Xb3JsZFwiLFwicmV2aWV3c1wiOntcInJlcXVpcmVkX2FwcHJvdmFsc1wiOlt7XCJhc3NvY2lhdGlvblwiOltcIk1FTUJFUlwiXSxcImxvZ2luXCI6XCJvY3RvY2F0XCJ9XX0sXCJzY2hlbWFcIjpcIm9tbmlib3VudHkvY3JpdGVyaWFcIixcInNsb3RzXCI6W3tcImFtb3VudFwiOlwiNTAwMDAwMFwifSx7XCJhbW91bnRcIjpcIjI1MDAwMDBcIn1dLFwidGl0bGVcIjpcIkhhcmRlbiB0aGUgYXV0aCBib3VuZGFyeVwiLFwidW5maWxsZWRcIjpcInJlZnVuZF9zcG9uc29yXCIsXCJ2ZXJzaW9uXCI6XCIxXCJ9In0=",
+              "gas": 300000000000000,
+              "deposit": "50000000000000000000000"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

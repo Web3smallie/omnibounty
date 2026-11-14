@@ -1,0 +1,30 @@
+{
+  "txHash": "HFMhbrJ9BbPabEQWKDrqduqVkPxVxKyhwo2gCKgMu9qx",
+  "signer": "diaryofdero.testnet",
+  "rpc": {
+    "result": {
+      "status": {
+        "SuccessValue": "eyJpZCI6NDE0MjAxMTIyODkxOTQyLCJzcG9uc29yIjoiZGlhcnlvZmRlcm8udGVzdG5ldCIsInRva2VuIjoiMHgwMzZjYmQ1Mzg0MmM1NDI2NjM0ZTc5Mjk1NDFlYzIzMThmM2RjZjdlIiwiY3JpdGVyaWFfaGFzaCI6IjB4MGZhMmQzYmM1ZmUyNTM1NWY2ODBlZDYyYzUzNDg5OTkwNGJmZTE3MmZhNjg1Njk5NjE3OGRiMzVkMmY3ZjJmNCIsInNsb3RzIjpbIjEwMDAwMDAiLCIxMDAwMDAwIl0sInNsb3RzX2ZpbGxlZCI6MCwidG90YWxfYW1vdW50IjoiMjAwMDAwMCIsImZ1bmRlZCI6ZmFsc2UsImRlYWRsaW5lIjowLCJjaGFsbGVuZ2Vfd2luZG93IjowLCJjcmVhdGVkX2F0IjoxNzk0Njc4MzY4LCJzZXEiOjAsInN0YXR1cyI6Im9wZW4ifQ=="
+      },
+      "transaction": {
+        "actions": [
+          {
+            "FunctionCall": {
+              "args": "eyJib3VudHlfaWQiOjQxNDIwMTEyMjg5MTk0MiwidG9rZW4iOiIweDAzNkNiRDUzODQyYzU0MjY2MzRlNzkyOTU0MWVDMjMxOGYzZENGN2UiLCJjcml0ZXJpYV9qc29uIjoie1wiYWxsb3dfZm9ya3NcIjpmYWxzZSxcImNoYWxsZW5nZV93aW5kb3dfc2VjXCI6XCIwXCIsXCJkZWFkbGluZVwiOlwiMFwiLFwiZGVzY3JpcHRpb25cIjpcIkltcHJvdmUgdGhlIFZhbGVuIHJlcG9zaXRvcnkncyBSRUFETUUgdG8gbWFrZSB0aGUgcHJvamVjdCBlYXNpZXIgZm9yIG5ldyBkZXZlbG9wZXJzIHRvIHVuZGVyc3RhbmQuXFxuXFxuVGhlIGNvbnRyaWJ1dGlvbiBzaG91bGQgaW5jbHVkZTpcXG4tIEEgY2xlYXIgZXhwbGFuYXRpb24gb2Ygd2hhdCBWYWxlbiBkb2VzLlxcbi0gQW4gb3ZlcnZpZXcgb2YgaXRzIGNvcmUgYXJjaGl0ZWN0dXJlIGFuZCBmdW5jdGlvbmFsaXR5Llxcbi0gSW5zdHJ1Y3Rpb25zIGZvciBzZXR0aW5nIHVwIHRoZSBwcm9qZWN0IGxvY2FsbHkuXFxuLSBDbGVhciBmb3JtYXR0aW5nIGFuZCB1c2VmdWwgbGlua3MgdG8gcmVsZXZhbnQgcHJvamVjdCByZXNvdXJjZXMuXFxuXFxuU3VibWl0IHRoZSBjaGFuZ2VzIGFzIGEgR2l0SHViIHB1bGwgcmVxdWVzdC4gVGhlIGJvdW50eSBpcyBjb21wbGV0ZWQgd2hlbiB0aGUgUFIgaXMgbWVyZ2VkIGludG8gdGhlIHJlcG9zaXRvcnkncyBtYWluIGJyYW5jaC5cIixcImV2aWRlbmNlX21heF9hZ2Vfc2VjXCI6XCI2MDQ4MDBcIixcImlkZW50aXR5X3BvbGljeVwiOlwib3BlblwiLFwibWVyZ2VfcG9saWN5XCI6XCJtZXJnZWRcIixcInBvbGljeVwiOlwib3JkZXJlZF9zbG90c1wiLFwicmVwb1wiOlwiV2ViM3NtYWxsaWUvdmFsZW5cIixcInNjaGVtYVwiOlwib21uaWJvdW50eS9jcml0ZXJpYVwiLFwic2xvdHNcIjpbe1wiYW1vdW50XCI6XCIxMDAwMDAwXCJ9LHtcImFtb3VudFwiOlwiMTAwMDAwMFwifV0sXCJ0aXRsZVwiOlwiSW1wcm92ZSBWYWxlbidzIFJFQURNRSBkb2N1bWVudGF0aW9uXCIsXCJ1bmZpbGxlZFwiOlwicmVmdW5kX3Nwb25zb3JcIixcInZlcnNpb25cIjpcIjFcIn0ifQ==",
+              "deposit": "50000000000000000000000",
+              "gas": 300000000000000,
+              "method_name": "create_bounty"
+            }
+          }
+        ],
+        "hash": "HFMhbrJ9BbPabEQWKDrqduqVkPxVxKyhwo2gCKgMu9qx",
+        "nonce": 277235221000005,
+        "priority_fee": 0,
+        "public_key": "ed25519:8xfnvn7SdAEwuqv6X96drcn2CQbBPUz8nrX57yvRmWER",
+        "receiver_id": "omnibounty-v3.testnet",
+        "signature": "ed25519:5azKL2L4STn9RSEn2L7vomWmdb74fAKeP4HnVtJZFQurk8TbMcoKzeQFQ1p1KsLyeFGhHmxnNKk8mZc3ogErpZ6P",
+        "signer_id": "diaryofdero.testnet"
+      }
+    }
+  }
+}

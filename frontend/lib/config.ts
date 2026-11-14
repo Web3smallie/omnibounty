@@ -10,7 +10,18 @@ export interface FrontendConfig {
   escrowAddress: string;
   expectedChainId: number;
   usdcAddress: string;
+  indexerBaseUrl: string;
 }
+
+// Transaction-anchored criteria recovery reads the contract's public
+// receipt history through a NEAR indexer (discovery only — every
+// recovered document is re-verified against the on-chain hash, so the
+// indexer is untrusted for integrity). One pinned host per network;
+// override with NEXT_PUBLIC_NEAR_INDEXER_URL for custom deployments.
+export const NEAR_INDEXER_URLS = {
+  testnet: "https://api-testnet.nearblocks.io",
+  mainnet: "https://api.nearblocks.io",
+} as const;
 
 function env(name: string, fallback: string): string {
   const v = process.env[name];
@@ -29,4 +40,8 @@ export const config: FrontendConfig = {
   expectedChainId: Number(env("NEXT_PUBLIC_CHAIN_ID", "84532")),
   // Base Sepolia USDC (Circle). Override per deployment.
   usdcAddress: env("NEXT_PUBLIC_USDC_ADDRESS", "0x036CbD53842c5426634e7929541eC2318f3dCF7e"),
+  indexerBaseUrl: env(
+    "NEXT_PUBLIC_NEAR_INDEXER_URL",
+    env("NEXT_PUBLIC_NETWORK_ID", "testnet") === "mainnet" ? NEAR_INDEXER_URLS.mainnet : NEAR_INDEXER_URLS.testnet
+  ),
 };

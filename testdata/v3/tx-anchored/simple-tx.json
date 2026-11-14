@@ -1,0 +1,25 @@
+{
+  "txHash": "4Q7y7v8w9x0y1z2a3b4c5d6e7f8g9h0j1k2m3n4o5p6",
+  "signer": "sponsor-a.testnet",
+  "rpc": {
+    "result": {
+      "status": {
+        "SuccessValue": ""
+      },
+      "transaction": {
+        "signer_id": "sponsor-a.testnet",
+        "receiver_id": "omnibounty-v3.testnet",
+        "actions": [
+          {
+            "FunctionCall": {
+              "method_name": "create_bounty",
+              "args": "eyJib3VudHlfaWQiOjkwMDEsInRva2VuIjoiMHgwMzZDYkQ1Mzg0MmM1NDI2NjM0ZTc5Mjk1NDFlQzIzMThmM2RDRjdlIiwiY3JpdGVyaWFfanNvbiI6IntcImFsbG93X2ZvcmtzXCI6dHJ1ZSxcImNoYWxsZW5nZV93aW5kb3dfc2VjXCI6XCIwXCIsXCJkZWFkbGluZVwiOlwiMFwiLFwiZGVzY3JpcHRpb25cIjpcIkRpYWdub3NlIHdoeSAvbG9naW4gcmVkaXJlY3RzIGF1dGhlbnRpY2F0ZWQgdXNlcnMgYmFjayB0byBpdHNlbGYgYW5kIGxhbmQgYSBtZXJnZWQgUFIgd2l0aCBhIHJlZ3Jlc3Npb24gdGVzdC5cIixcImV2aWRlbmNlX21heF9hZ2Vfc2VjXCI6XCI2MDQ4MDBcIixcImlkZW50aXR5X3BvbGljeVwiOlwib3BlblwiLFwibWVyZ2VfcG9saWN5XCI6XCJtZXJnZWRcIixcInBvbGljeVwiOlwic2luZ2xlX3dpbm5lclwiLFwicmVwb1wiOlwib2N0b2NhdC9IZWxsby1Xb3JsZFwiLFwic2NoZW1hXCI6XCJvbW5pYm91bnR5L2NyaXRlcmlhXCIsXCJzbG90c1wiOlt7XCJhbW91bnRcIjpcIjI1MDAwMDBcIn1dLFwidGl0bGVcIjpcIkZpeCB0aGUgbG9naW4gcmVkaXJlY3QgbG9vcFwiLFwidW5maWxsZWRcIjpcInJlZnVuZF9zcG9uc29yXCIsXCJ2ZXJzaW9uXCI6XCIxXCJ9In0=",
+              "gas": 300000000000000,
+              "deposit": "50000000000000000000000"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

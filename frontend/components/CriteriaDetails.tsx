@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchCriteriaDocument } from "../lib/criteriaSource.mjs";
+import { getSharedResolver } from "../lib/criteriaResolve.mjs";
+import { config } from "../lib/config";
 import { ExtLink, LoadingDots } from "./ui";
 import { shortenAddress } from "../lib/display.mjs";
 
@@ -10,8 +11,16 @@ interface CriteriaDocLike {
   description?: unknown;
   repo?: unknown;
   merge_policy?: unknown;
+  author_association?: unknown;
   issue?: { url?: unknown; keywords?: unknown } | null;
   checks?: { required?: Array<{ name?: unknown }> } | null;
+  files?: {
+    allowed_paths?: unknown;
+    required_touched?: unknown;
+    forbidden_paths?: unknown;
+    max_changed_files?: unknown;
+    patch_contains_all?: unknown;
+  } | null;
   labels?: { required_all?: unknown[] } | null;
   reviews?: { required_approvals?: Array<{ login?: unknown }> } | null;
 }
@@ -22,10 +31,11 @@ type DetailsState =
   | { status: "missing" }
   | { status: "error"; message: string };
 
-/// Contributor-facing task description: fetches the served criteria
-/// artifact and renders it ONLY after hash verification against the
-/// on-chain commitment. Anything unverified falls back to an honest
-/// notice — never a guessed description.
+/// Contributor-facing task description: resolves the criteria through
+/// the shared universal resolver (verified cache -> served artifact ->
+/// transaction-anchored recovery) and renders it ONLY after hash
+/// verification against the on-chain commitment. Anything unverified
+/// falls back to an honest notice — never a guessed description.
 export default function CriteriaDetails({ bountyId, criteriaHash }: { bountyId: number; criteriaHash: string }) {
   const [state, setState] = useState<DetailsState>({ status: "loading" });
   const [retry, setRetry] = useState(0);
@@ -33,7 +43,14 @@ export default function CriteriaDetails({ bountyId, criteriaHash }: { bountyId: 
   useEffect(() => {
     let live = true;
     setState({ status: "loading" });
-    fetchCriteriaDocument(criteriaHash)
+    const shared = getSharedResolver({
+      fetchImpl: fetch,
+      indexerBaseUrl: config.indexerBaseUrl,
+      contractId: config.contractId,
+      nearRpcUrl: config.nearRpcUrl,
+    });
+    shared
+      .resolve({ bountyId, criteriaHash })
       .then((r: { ok: boolean; doc?: CriteriaDocLike; reason?: string; detail?: string }) => {
         if (!live) return;
         if (r.ok && r.doc) setState({ status: "ready", doc: r.doc });
@@ -59,12 +76,16 @@ export default function CriteriaDetails({ bountyId, criteriaHash }: { bountyId: 
   if (state.status === "missing") {
     return (
       <p className="muted small" role="status">
-        The sponsor hasn&apos;t published the criteria document with this deployment (commitment{" "}
+        The criteria document could not be resolved automatically (no served artifact and no
+        discoverable creation transaction for commitment{" "}
         <code className="mono small" title={criteriaHash}>
           {shortenAddress(criteriaHash)}
         </code>
         ). The slot schedule and funding above come from chain state; you can still claim by
-        pasting the sponsor&apos;s criteria JSON in the claim form below.
+        pasting the sponsor&apos;s criteria JSON in the claim form below.{" "}
+        <button type="button" onClick={() => setRetry((n) => n + 1)}>
+          Retry
+        </button>
       </p>
     );
   }
@@ -94,6 +115,14 @@ export default function CriteriaDetails({ bountyId, criteriaHash }: { bountyId: 
   const keywords = Array.isArray(doc.issue?.keywords)
     ? doc.issue.keywords.map((k) => str(k)).filter((k): k is string => !!k)
     : [];
+  const associations = Array.isArray(doc.author_association)
+    ? doc.author_association.map((a) => str(a)).filter((a): a is string => !!a)
+    : [];
+  const strList = (v: unknown) =>
+    Array.isArray(v) ? v.map((s) => str(s)).filter((s): s is string => !!s) : [];
+  const allowedPaths = strList(doc.files?.allowed_paths);
+  const requiredTouched = strList(doc.files?.required_touched);
+  const forbiddenPaths = strList(doc.files?.forbidden_paths);
   const repo = str(doc.repo);
   const issueUrl = str(doc.issue?.url);
 
@@ -123,6 +152,26 @@ export default function CriteriaDetails({ bountyId, criteriaHash }: { bountyId: 
           <>
             <dt>Merge policy</dt>
             <dd>{str(doc.merge_policy)}</dd>
+          </>
+        )}
+        {associations.length > 0 && (
+          <>
+            <dt>Author association</dt>
+            <dd>{associations.join(", ")}</dd>
+          </>
+        )}
+        {(allowedPaths.length > 0 || requiredTouched.length > 0 || forbiddenPaths.length > 0) && (
+          <>
+            <dt>File constraints</dt>
+            <dd>
+              {[
+                allowedPaths.length > 0 && `allowed: ${allowedPaths.join(", ")}`,
+                requiredTouched.length > 0 && `required: ${requiredTouched.join(", ")}`,
+                forbiddenPaths.length > 0 && `forbidden: ${forbiddenPaths.join(", ")}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </dd>
           </>
         )}
         {checks.length > 0 && (
