@@ -1,0 +1,11 @@
+{
+  "ok": false,
+  "bounty_id": 414201122891941,
+  "pr_number": null,
+  "head_sha": null,
+  "verdicts": [],
+  "errors": [
+    "NO_OPEN_SLOT: 414201122891941 has no unfilled slot",
+    "IDENTIFIER_REPLAY"
+  ]
+}

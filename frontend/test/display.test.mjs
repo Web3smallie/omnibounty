@@ -26,6 +26,7 @@ import {
   interpretNearTxOutcome,
   isBountyExpired,
   isBountyV3,
+  isClaimableOpen,
   isSuccessfulReceipt,
   nearAccountUrl,
   nearTxUrl,
@@ -139,6 +140,24 @@ describe("bounty presentation", () => {
     assert.equal(isBountyExpired({ expiry: 0 }, 9999999999), false);
     assert.equal(isBountyExpired({ expiry: 1000 }, 2000), true);
     assert.equal(isBountyExpired({ expiry: 3000 }, 2000), false);
+  });
+
+  it("counts claimable bounties as open (V1 status, V3 derived)", () => {
+    // V1 keeps contract-status semantics.
+    assert.equal(isClaimableOpen({ status: "open" }), true);
+    assert.equal(isClaimableOpen({ status: "pending" }), false);
+    assert.equal(isClaimableOpen({ status: "claimed" }), false);
+    // V3 derives claimability: funded, unexpired, unfilled slots.
+    // (Contract "open" means UNFUNDED — see bounty_view in lib.rs.)
+    const v3 = (o) => ({ criteria_hash: "0x00", ...o });
+    assert.equal(isClaimableOpen(v3({ status: "funded", funded: true, slots: ["100"], slots_filled: 0 })), true);
+    assert.equal(isClaimableOpen(v3({ status: "funded", funded: true, slots: ["100"], slots_filled: 1 })), false);
+    assert.equal(isClaimableOpen(v3({ status: "open", funded: false, slots: ["100"], slots_filled: 0 })), false);
+    assert.equal(isClaimableOpen(v3({ status: "expired", funded: true, slots: ["100"], slots_filled: 0 })), false);
+    // Malformed records fail closed.
+    assert.equal(isClaimableOpen(null), false);
+    assert.equal(isClaimableOpen(v3({ status: "funded", funded: true })), false);
+    assert.equal(isClaimableOpen(v3({ status: "funded", funded: true, slots: [], slots_filled: 0 })), false);
   });
 });
 

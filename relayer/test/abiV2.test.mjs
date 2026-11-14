@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { ethers } from "ethers";
@@ -12,7 +12,11 @@ import { ESCROW_ABI_V1, ESCROW_ABI_V2 } from "../src/index.mjs";
 // relayer suite bypasses real decoding, so this file pins true
 // chain-shaped decoding plus selector parity with the compiled artifact.
 const HERE = dirname(fileURLToPath(import.meta.url));
-const ARTIFACT_PATH = join(HERE, "..", "..", "contracts", "base-v3", "out", "OmniEscrowV2.sol", "OmniEscrowV2.json");
+let ARTIFACT_PATH = join(HERE, "..", "..", "contracts", "base-v3", "out", "OmniEscrowV2.sol", "OmniEscrowV2.json");
+if (!existsSync(ARTIFACT_PATH)) {
+  // Foundry-free fresh clones: use the committed frozen copy (see testdata/evm/PROVENANCE.md).
+  ARTIFACT_PATH = join(HERE, "..", "..", "testdata", "evm", "OmniEscrowV2.json");
+}
 let ARTIFACT;
 try {
   ARTIFACT = JSON.parse(readFileSync(ARTIFACT_PATH, "utf8"));

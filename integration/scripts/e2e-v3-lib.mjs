@@ -24,8 +24,8 @@
 // to out/v3-e2e-trace-<ts>.json. Success requires a confirmed receipt PLUS
 // a parsed VoucherClaimed event — never submission alone.
 
-import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { join, dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import hre from "hardhat";
@@ -38,15 +38,26 @@ export const ROOT = join(HERE, "..", "..");
 export const OUTDIR = join(HERE, "..", "out");
 export const DUMMY_SIGNER = "0x1111111111111111111111111111111111111111";
 
+// Committed fallbacks for Foundry-free runs (see testdata/evm/PROVENANCE.md).
+// A fresh local build always wins when present, so development iterations
+// keep testing current sources; only a missing build output falls back.
+const FROZEN_ARTIFACTS = {
+  "contracts/base-v3/out/OmniEscrowV2.sol/OmniEscrowV2.json": "testdata/evm/OmniEscrowV2.json",
+  "contracts/base-v3/out/OmniEscrowV2.t.sol/MockUSDC.json": "testdata/evm/MockUSDC.json",
+};
+
 export function loadArtifact(relPath) {
-  const p = join(ROOT, relPath);
+  let p = join(ROOT, relPath);
+  if (!existsSync(p) && FROZEN_ARTIFACTS[relPath]) {
+    p = join(ROOT, FROZEN_ARTIFACTS[relPath]);
+  }
   try {
     const j = JSON.parse(readFileSync(p, "utf8"));
     if (!j.abi || !j.bytecode?.object) throw new Error("bad artifact shape");
     return j;
   } catch (e) {
     throw new Error(
-      `missing build artifact ${relPath} (${e.message}); run forge build + forge test in contracts/base-v3 first`
+      `missing build artifact ${relPath} (${e.message}); run forge build + forge test in contracts/base-v3 first, or ensure testdata/evm/ is present`
     );
   }
 }
@@ -72,10 +83,15 @@ export async function deploySuite(deployer, mpcSigner) {
 
 export const FIXTURE_FRESHNESS_SEC = 3600;
 
+// The committed frozen fixture: Rust-generated once at a pinned 2036
+// epoch (see integration/README.md), replayed indefinitely without
+// regen. Any other path is a live regen output with a wall-clock epoch.
+export const FROZEN_FIXTURE_PATH = join(ROOT, "testdata", "v3", "e2e-vouchers.json");
+
 export function loadFixture() {
   // E2E_FIXTURE_PATH lets the orchestrator run from a freshly regenerated
   // file; the tracked default keeps standalone `npm run e2e` working.
-  const p = process.env.E2E_FIXTURE_PATH ?? join(ROOT, "testdata", "v3", "e2e-vouchers.json");
+  const p = process.env.E2E_FIXTURE_PATH ?? FROZEN_FIXTURE_PATH;
   let fx;
   try {
     fx = JSON.parse(readFileSync(p, "utf8"));
@@ -113,10 +129,37 @@ export async function assertChainSane(provider, fx) {
     `chain mismatch: network ${net.chainId} vs fixture ${fx.config.chainId}`
   );
   // Deterministic test clock: the fixture epoch is the single time root.
-  // The fresh chain must start within one deadline-window of it; anything
-  // older means a stale fixture, not a broken test.
   const block = await provider.getBlock("latest");
-  const skew = Math.abs(Number(block.timestamp) - fx.generated_at);
+  const chainNow = Number(block.timestamp);
+  if (fx.generated_at > chainNow) {
+    // Frozen replay: the committed fixture's epoch is ahead of the fresh
+    // chain's wall-clock start, so pin the chain FORWARD to the epoch.
+    // Forward-only by construction — this branch requires the epoch to be
+    // strictly ahead, so the harness can never move a chain backwards in
+    // time. The pin is re-read and asserted before anything else runs.
+    await provider.send("evm_setNextBlockTimestamp", [fx.generated_at]);
+    await provider.send("evm_mine", []);
+    console.log(`chain clock pinned forward to fixture epoch ${fx.generated_at}`);
+    const pinned = await provider.getBlock("latest");
+    assert.equal(
+      Number(pinned.timestamp),
+      fx.generated_at,
+      `chain clock pin failed (wanted ${fx.generated_at}, got ${pinned.timestamp}); ` +
+        `aborting rather than running against the wrong time`
+    );
+    return;
+  }
+  // Normal regeneration workflow: the fixture was minted seconds ago, so
+  // the fresh chain must start within one window of its epoch; anything
+  // older means a stale fixture, not a broken test.
+  const skew = chainNow - fx.generated_at;
+  if (skew >= FIXTURE_FRESHNESS_SEC && resolve(fx.fixturePath) === FROZEN_FIXTURE_PATH) {
+    assert.fail(
+      `frozen fixture horizon passed (epoch ${fx.generated_at} is ${skew}s behind chain time); ` +
+        `the committed 2036 fixture must be refreshed (see integration/README.md); ` +
+        `for a one-off run, regenerate via npm run e2e:local`
+    );
+  }
   assert.ok(
     skew < FIXTURE_FRESHNESS_SEC,
     `fixture is stale (chain starts ${skew}s after its epoch, limit ${FIXTURE_FRESHNESS_SEC}s); ` +
@@ -231,7 +274,7 @@ class FixtureNear {
   }
 }
 
-export function makeRelayer({ escrow, mpcSigner, escrowAddress, chainId, views, storePath }) {
+export function makeRelayer({ escrow, mpcSigner, escrowAddress, chainId, views, storePath, nowSec = null }) {
   const near = new FixtureNear(views);
   const store = new StateStore(storePath);
   const config = {
@@ -244,7 +287,7 @@ export function makeRelayer({ escrow, mpcSigner, escrowAddress, chainId, views, 
     voucherVersion: "2",
   };
   const logs = [];
-  const relayer = new Relayer({ config, near, escrow, store, log: (m) => logs.push(m) });
+  const relayer = new Relayer({ config, near, escrow, store, log: (m) => logs.push(m), testNowSec: nowSec });
   return { relayer, logs, store };
 }
 
@@ -328,6 +371,7 @@ export async function scenarioA(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 0)],
       storePath: ctx.tmpStore("a"),
+      nowSec: fx.generated_at,
     });
     const [res] = await relayer.pollOnce();
     step(s, "submitted", res.status === "relayed" ? "ok" : "FAILED", res.txHash ?? res.reason);
@@ -361,6 +405,7 @@ export async function scenarioB(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 1)],
       storePath: ctx.tmpStore("b"),
+      nowSec: fx.generated_at,
     });
     const [res] = await relayer.pollOnce();
     await assertConfirmedPayout(provider, ctx.escrowFull, res, {
@@ -391,6 +436,7 @@ export async function scenarioC(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 0)],
       storePath: ctx.tmpStore("c-fresh"),
+      nowSec: fx.generated_at,
     });
     const [res] = await relayer.pollOnce();
     assert.equal(res.status, "already");
@@ -435,6 +481,7 @@ export async function scenarioD(ctx) {
         chainId: fx.config.chainId,
         views: [neg.signed],
         storePath: ctx.tmpStore(`d-${neg.tag}`),
+      nowSec: fx.generated_at,
       });
       const [res] = await relayer.pollOnce();
       assert.equal(res.status, "skipped", neg.tag);
@@ -487,6 +534,7 @@ export async function scenarioFrace(ctx) {
         chainId: fx.config.chainId,
         views: [unrelayedFor(fx, 2)],
         storePath: ctx.tmpStore(`f-race-${tag}`),
+      nowSec: fx.generated_at,
       }).relayer;
     const r1 = mk("a");
     const r2 = mk("b");
@@ -527,6 +575,7 @@ export async function scenarioFretry(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 3)],
       storePath: ctx.tmpStore("f-retry"),
+      nowSec: fx.generated_at,
     });
     const [err] = await broken.pollOnce();
     assert.equal(err.status, "error");
@@ -538,6 +587,7 @@ export async function scenarioFretry(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 3)],
       storePath: ctx.tmpStore("f-retry"),
+      nowSec: fx.generated_at,
     });
     const [res] = await relayer.pollOnce();
     await assertConfirmedPayout(provider, ctx.escrowFull, res, {
@@ -576,6 +626,7 @@ export async function scenarioE(ctx) {
       chainId: fx.config.chainId,
       views: [unrelayedFor(fx, 4)],
       storePath: ctx.tmpStore("e"),
+      nowSec: fx.generated_at,
     });
     const [res] = await relayer.pollOnce();
     assert.equal(res.status, "skipped");

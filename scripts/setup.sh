@@ -32,7 +32,7 @@ done
 
 echo "==> 1/8 prerequisite commands"
 for cmd in curl git python3 node npm cc pkg-config; do
-  command -v "$cmd" >/dev/null || fail "missing '$cmd' (Ubuntu/Debian: sudo apt-get install -y curl git python3 build-essential pkg-config libudev-dev; Node >= 22 via nvm or nodejs.org)"
+  command -v "$cmd" >/dev/null || fail "missing '$cmd' (Ubuntu/Debian: sudo apt-get install -y curl git python3 build-essential pkg-config libudev-dev libssl-dev; Node >= 22 via nvm or nodejs.org)"
 done
 node -e "process.exit(Number(process.versions.node.split('.')[0]) >= 22 ? 0 : 1)" \
   || fail "node >= 22 required (found $(node --version))"

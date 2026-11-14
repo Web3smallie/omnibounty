@@ -3,7 +3,7 @@ import { escrowV2PaidTotal } from "../lib/base";
 import { config } from "../lib/config";
 import Marketplace from "../components/Marketplace";
 import { ExtLink } from "../components/ui";
-import { aggregateV3Paid, baseAddressUrl, claimedAmountsTotal, formatUsdc, nearAccountUrl, shortenAddress } from "../lib/display.mjs";
+import { aggregateV3Paid, baseAddressUrl, claimedAmountsTotal, formatUsdc, isClaimableOpen, nearAccountUrl, shortenAddress } from "../lib/display.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -24,7 +24,7 @@ export default async function Home() {
     error = e instanceof Error ? e.message : String(e);
   }
 
-  const open = bounties?.filter((b) => b.status === "open").length ?? 0;
+  const open = bounties?.filter(isClaimableOpen).length ?? 0;
   // Safe on mixed V1/V3 lists: V3 records carry total_amount (not the
   // claimed part) and non-"claimed" statuses, and malformed amounts are
   // skipped instead of throwing outside the load try/catch above.
@@ -52,7 +52,7 @@ export default async function Home() {
             <span className="journey-kicker">For sponsors</span>
             <span className="journey-title">Fund a bounty</span>
             <span className="journey-text">
-              Pick a repo and PR, set the reward and deadline, fund it with USDC.
+              Pick a repo and write acceptance criteria, set the reward, fund it with USDC.
             </span>
             <span className="journey-cta">Create a bounty →</span>
           </a>

@@ -1,15 +1,19 @@
 // e2e:local — single-command local cross-chain E2E.
 //
 // Runs the complete lifecycle on a fresh in-process chain: dependency
-// checks -> escrow build -> fixture regen (fresh Dependable clock) ->
+// checks -> escrow build -> fixture regen (fresh deterministic clock) ->
 // scenarios A-F -> verified report. No step is skipped silently: any
 // failure prints what failed, why, and how to fix it, then exits 1.
+// Replay mode (--no-regen) instead runs the committed frozen fixture
+// plus the committed artifacts in testdata/evm/, invoking neither
+// forge nor cargo.
 //
 // Time model: the fixture epoch is the single test clock. Regen runs
 // inside this command (seconds before the scenarios), so the run can
 // never go stale; E2E_FIXTURE_TIME pins the epoch for byte-reproducible
 // fixtures (same inputs -> identical file, checkable with cmp).
-// --no-regen reuses integration/out/e2e-fx.json from a previous run.
+// --no-regen runs testdata/v3/e2e-vouchers.json (frozen 2036 epoch);
+// the harness pins the chain clock forward to that epoch at run time.
 //
 // This is a LOCAL simulation (in-process EVM, fixture NEAR views, test
 // keys). It never touches live testnets and proves nothing about live
@@ -24,6 +28,7 @@ const INTEGRATION = join(HERE, "..");
 const ROOT = join(HERE, "..", "..");
 const OUT_FIXTURE = join(INTEGRATION, "out", "e2e-fx.json");
 const ENV_JSON = join(INTEGRATION, "out", "e2e-env.json");
+const FROZEN_FIXTURE = join(ROOT, "testdata", "v3", "e2e-vouchers.json");
 
 const ok = (m) => console.log(`PASS: ${m}`);
 const fail = (m) => {
@@ -38,8 +43,11 @@ function usage(exitCode) {
 Runs the full local cross-chain E2E: checks, escrow build, fixture regen,
 scenarios A-F, verified report. Exits 0 only if every scenario passes.
 
-  --no-regen   Reuse ${OUT_FIXTURE} from a previous run instead of
-               regenerating (fails fast if it is missing or stale).
+  --no-regen   Replay mode: run the committed frozen fixture
+               (${FROZEN_FIXTURE}) instead of regenerating. Invokes
+               neither forge nor cargo: escrow artifacts resolve from
+               testdata/evm/ (see PROVENANCE.md there) and the chain
+               clock is pinned to the fixture epoch at run time.
   --help       This text.
 
 Environment (all optional):
@@ -86,7 +94,7 @@ async function main(argv) {
     usage(2);
   }
   const noRegen = argv.includes("--no-regen");
-  console.log(`e2e:local (mode: ${noRegen ? "reuse fixture" : "fresh regen"})`);
+  console.log(`e2e:local (mode: ${noRegen ? "frozen replay" : "fresh regen"})`);
 
   step("1/6 prerequisite commands");
   const major = Number(process.versions.node.split(".")[0]);
@@ -99,10 +107,14 @@ async function main(argv) {
       fail(`missing ${pkg}/node_modules (run: cd ${pkg} && npm ci)`);
     }
   }
-  if (!have("forge")) {
-    fail("missing 'forge' (install Foundry: curl -sSL https://foundry.paradigm.xyz | bash, then foundryup)");
+  if (!noRegen) {
+    if (!have("forge")) {
+      fail("missing 'forge' (install Foundry: curl -sSL https://foundry.paradigm.xyz | bash, then foundryup)");
+    }
+    ok(`node ${process.version}, npm, integration deps, forge present`);
+  } else {
+    ok(`node ${process.version}, npm, integration deps present (replay mode: no forge/cargo needed)`);
   }
-  ok(`node ${process.version}, npm, integration deps, forge present`);
   if (!noRegen) {
     if (!have("cargo")) fail("missing 'cargo' (install rustup from https://rustup.rs, then re-run; or pass --no-regen)");
     const withRustup = have("rustup", ["toolchain", "list"]);
@@ -120,20 +132,25 @@ async function main(argv) {
   }
 
   step("2/6 escrow build artifacts");
-  {
+  if (noRegen) {
+    for (const f of ["testdata/evm/OmniEscrowV2.json", "testdata/evm/MockUSDC.json"]) {
+      if (!existsSync(join(ROOT, f))) fail(`missing committed artifact ${f} (incomplete checkout?)`);
+    }
+    ok("using committed artifacts in testdata/evm/ (no forge invocation)");
+  } else {
     const r = await runLive("forge", ["build"], { cwd: join(ROOT, "contracts", "base-v3") });
     if (r.status !== 0) fail("forge build failed (see output above)");
+    ok("contracts/base-v3 artifacts built");
   }
-  ok("contracts/base-v3 artifacts built");
 
   let fixturePath;
   if (noRegen) {
-    step("3/6 fixture (reusing previous regen)");
-    if (!existsSync(OUT_FIXTURE)) {
-      fail(`no cached fixture at ${OUT_FIXTURE}; run without --no-regen first`);
+    step("3/6 fixture (frozen committed)");
+    if (!existsSync(FROZEN_FIXTURE)) {
+      fail(`missing committed fixture ${FROZEN_FIXTURE} (incomplete checkout?)`);
     }
-    fixturePath = OUT_FIXTURE;
-    ok(`reusing ${fixturePath} (staleness is enforced at run time)`);
+    fixturePath = FROZEN_FIXTURE;
+    ok(`replaying ${fixturePath} (frozen epoch; chain clock pinned at run time)`);
   } else {
     step("3/6 fixture addresses (prepare)");
     {

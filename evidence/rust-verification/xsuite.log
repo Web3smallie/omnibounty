@@ -1,0 +1,880 @@
+==> ensure sandbox binary (verified, cached)
+ensure-near-sandbox: downloading near-sandbox 2.9.0 ...
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:01 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:02 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:03 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:04 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:05 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:06 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:07 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:08 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:09 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:10 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:11 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:12 --:--:--     0  0     0    0     0    0     0      0      0 --:--:--  0:00:13 --:--:--     0  5 26.6M    5 1410k    0     0   100k      0  0:04:31  0:00:14  0:04:17  281k 88 26.6M   88 23.6M    0     0  1610k      0  0:00:16  0:00:15  0:00:01 4837k100 26.6M  100 26.6M    0     0  1801k      0  0:00:15  0:00:15 --:--:-- 6682k
+ensure-near-sandbox: installed verified binary (/tmp/m2home/.cache/omnibounty/near-sandbox-2.9.0/near-sandbox)
+==> unit tests
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.12
+   Compiling libc v0.2.191
+   Compiling cfg-if v1.0.0
+   Compiling syn v2.0.119
+   Compiling autocfg v1.3.0
+   Compiling once_cell v1.19.0
+   Compiling version_check v0.9.4
+   Compiling generic-array v0.14.7
+   Compiling syn v3.0.9
+   Compiling zeroize v1.8.1
+   Compiling typenum v1.20.1
+   Compiling pin-project-lite v0.2.14
+   Compiling equivalent v1.0.1
+   Compiling subtle v2.6.1
+   Compiling serde_core v1.0.229
+   Compiling hashbrown v0.17.1
+   Compiling getrandom v0.2.15
+   Compiling serde v1.0.229
+   Compiling rand_core v0.6.4
+   Compiling indexmap v2.14.2
+   Compiling serde_derive v1.0.229
+   Compiling smallvec v1.16.5
+   Compiling syn v1.0.109
+   Compiling lock_api v0.4.12
+   Compiling parking_lot_core v0.9.10
+   Compiling const-oid v0.9.6
+   Compiling scopeguard v1.2.0
+   Compiling bytes v1.12.1
+   Compiling futures-core v0.3.34
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling fnv v1.0.7
+   Compiling log v0.4.35
+   Compiling digest v0.10.7
+   Compiling parking_lot v0.12.3
+   Compiling tokio-macros v2.3.0
+   Compiling tracing-core v0.1.32
+   Compiling signal-hook-registry v1.4.2
+   Compiling mio v0.8.11
+   Compiling socket2 v0.5.7
+   Compiling num_cpus v1.16.0
+   Compiling futures-sink v0.3.34
+   Compiling slab v0.4.9
+   Compiling tokio v1.38.0
+   Compiling anyhow v1.0.86
+   Compiling ppv-lite86 v0.2.17
+   Compiling tracing-attributes v0.1.27
+   Compiling thiserror v1.0.61
+   Compiling itoa v1.0.18
+   Compiling either v1.19.0
+   Compiling memchr v2.8.3
+   Compiling tracing v0.1.40
+   Compiling futures-channel v0.3.34
+   Compiling thiserror-impl v1.0.61
+   Compiling futures-io v0.3.34
+   Compiling futures-task v0.3.34
+   Compiling futures-util v0.3.34
+   Compiling toml_datetime v0.6.6
+   Compiling strsim v0.11.1
+   Compiling winnow v0.5.40
+   Compiling rand_chacha v0.3.1
+   Compiling bitflags v2.13.2
+   Compiling spin v0.5.2
+   Compiling cfg_aliases v0.2.1
+   Compiling borsh v1.8.1
+   Compiling lazy_static v1.4.0
+   Compiling rand v0.8.8
+   Compiling toml_edit v0.21.1
+   Compiling itertools v0.10.5
+   Compiling proc-macro-crate v3.1.0
+   Compiling num-traits v0.2.19
+   Compiling rustversion v1.0.23
+   Compiling ident_case v1.0.1
+   Compiling rustix v0.38.34
+   Compiling darling_core v0.20.9
+   Compiling borsh-derive v1.8.1
+   Compiling prost-derive v0.9.0
+   Compiling crossbeam-utils v0.8.23
+   Compiling cpufeatures v0.2.12
+   Compiling linux-raw-sys v0.4.14
+   Compiling darling_macro v0.20.9
+   Compiling pin-project-internal v1.1.5
+   Compiling getrandom v0.3.4
+   Compiling heck v0.4.1
+   Compiling home v0.5.9
+   Compiling rustix v1.1.6
+   Compiling aho-corasick v1.1.3
+   Compiling pin-project v1.1.5
+   Compiling which v4.4.2
+   Compiling darling v0.20.9
+   Compiling sha2 v0.10.8
+   Compiling tokio-util v0.7.11
+   Compiling num-bigint v0.3.3
+   Compiling regex-syntax v0.8.11
+   Compiling linux-raw-sys v0.12.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling crunchy v0.2.2
+   Compiling shlex v2.0.1
+   Compiling getrandom v0.1.16
+   Compiling ryu v1.0.18
+   Compiling semver v1.0.28
+   Compiling rustc_version v0.4.0
+   Compiling regex-automata v0.4.18
+   Compiling prost v0.9.0
+   Compiling cc v1.11.1
+   Compiling crossbeam-channel v0.5.13
+   Compiling prost-build v0.9.0
+   Compiling num-integer v0.1.46
+   Compiling http v0.2.12
+   Compiling signature v2.2.0
+   Compiling num-rational v0.3.2
+   Compiling fastrand v2.5.0
+   Compiling httparse v1.10.1
+   Compiling convert_case v0.4.0
+   Compiling fixedbitset v0.4.2
+   Compiling unicode-segmentation v1.11.0
+   Compiling serde_json v1.0.117
+   Compiling petgraph v0.6.5
+   Compiling heck v0.3.3
+   Compiling derive_more v0.99.17
+   Compiling tempfile v3.27.0
+   Compiling regex v1.13.1
+   Compiling secp256k1-sys v0.8.1
+   Compiling prost-types v0.9.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling serde_with_macros v3.8.1
+   Compiling strum_macros v0.24.3
+   Compiling near-account-id v1.1.4
+   Compiling tokio-stream v0.1.15
+   Compiling derive_arbitrary v1.5.0
+   Compiling enum-map-derive v0.17.0
+   Compiling async-trait v0.1.80
+   Compiling indexmap v1.9.3
+   Compiling regex-syntax v0.6.29
+   Compiling static_assertions v1.1.0
+   Compiling base64 v0.22.1
+   Compiling bs58 v0.4.0
+   Compiling tower-service v0.3.3
+   Compiling byteorder v1.5.0
+   Compiling percent-encoding v2.3.1
+   Compiling multimap v0.8.3
+   Compiling try-lock v0.2.5
+   Compiling want v0.3.2
+   Compiling regex-automata v0.1.10
+   Compiling serde_with v3.8.1
+   Compiling arbitrary v1.5.0
+   Compiling enum-map v2.7.3
+   Compiling strum v0.24.1
+   Compiling rand_core v0.5.1
+   Compiling h2 v0.3.26
+   Compiling http-body v0.4.6
+   Compiling futures-executor v0.3.30
+   Compiling hex v0.4.3
+   Compiling serde_repr v0.1.19
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling httpdate v1.0.3
+   Compiling utf8parse v0.2.2
+   Compiling hashbrown v0.12.3
+   Compiling base64 v0.21.7
+   Compiling overload v0.1.1
+   Compiling nu-ansi-term v0.46.0
+   Compiling near-primitives-core v0.20.1
+   Compiling anstyle-parse v1.0.0
+   Compiling hyper v0.14.28
+   Compiling uint v0.9.5
+   Compiling opentelemetry v0.17.0
+   Compiling rand_chacha v0.2.2
+   Compiling matchers v0.1.0
+   Compiling tonic-build v0.6.2
+   Compiling fixed-hash v0.7.0
+   Compiling ed25519 v2.2.3
+   Compiling sharded-slab v0.1.7
+   Compiling tokio-io-timeout v1.2.0
+   Compiling tracing-log v0.2.0
+   Compiling crypto-mac v0.8.0
+   Compiling cipher v0.2.5
+   Compiling digest v0.9.0
+   Compiling async-stream-impl v0.3.5
+   Compiling thread_local v1.1.8
+   Compiling opaque-debug v0.3.1
+   Compiling tower-layer v0.3.3
+   Compiling is_terminal_polyfill v1.70.0
+   Compiling colorchoice v1.0.1
+   Compiling protobuf v2.28.0
+   Compiling json_comments v0.2.2
+   Compiling anstyle v1.0.14
+   Compiling anstyle-query v1.0.3
+   Compiling near-config-utils v0.20.1
+   Compiling anstream v1.0.0
+   Compiling tower v0.4.13
+   Compiling async-stream v0.3.5
+   Compiling blake2 v0.9.2
+   Compiling tracing-subscriber v0.3.18
+   Compiling c2-chacha v0.3.3
+   Compiling opentelemetry-otlp v0.10.0
+   Compiling hyper-timeout v0.4.1
+   Compiling ed25519-dalek v2.1.1
+   Compiling primitive-types v0.10.1
+   Compiling rand v0.7.3
+   Compiling secp256k1 v0.27.0
+   Compiling tracing-futures v0.2.5
+   Compiling tokio-util v0.6.10
+   Compiling memoffset v0.8.0
+   Compiling base64 v0.13.1
+   Compiling unsafe-libyaml v0.2.11
+   Compiling clap_lex v1.1.1
+   Compiling near-stdx v0.20.1
+   Compiling time-core v0.1.9
+   Compiling num-conv v0.2.2
+   Compiling heck v0.5.0
+   Compiling deranged v0.5.9
+   Compiling powerfmt v0.2.0
+   Compiling prometheus v0.13.4
+   Compiling clap_derive v4.6.7
+   Compiling time v0.3.55
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling near-crypto v0.20.1
+   Compiling clap_builder v4.6.7
+   Compiling tonic v0.6.2
+   Compiling futures v0.3.30
+   Compiling actix-rt v2.9.0
+   Compiling tracing-log v0.1.4
+   Compiling der v0.7.9
+   Compiling ff v0.13.0
+   Compiling actix-macros v0.2.4
+   Compiling actix_derive v0.6.1
+   Compiling base16ct v0.2.0
+   Compiling assert_matches v1.5.0
+   Compiling rustc-hex v2.1.0
+   Compiling keccak v0.1.5
+   Compiling reed-solomon-erasure v4.0.2
+   Compiling sha3 v0.10.8
+   Compiling zeropool-bn v0.5.11
+   Compiling near-parameters v0.20.1
+   Compiling sec1 v0.7.3
+   Compiling actix v0.13.3
+   Compiling group v0.13.0
+   Compiling tracing-opentelemetry v0.17.4
+   Compiling clap v4.6.7
+   Compiling tracing-appender v0.2.3
+   Compiling opentelemetry-semantic-conventions v0.9.0
+   Compiling near-fmt v0.20.1
+   Compiling hmac v0.12.1
+   Compiling ripemd v0.1.3
+   Compiling near-rpc-error-core v0.20.1
+   Compiling crypto-bigint v0.5.5
+   Compiling fs2 v0.4.3
+   Compiling iana-time-zone v0.1.60
+   Compiling prefix-sum-vec v0.1.2
+   Compiling near-sdk-macros v5.1.0
+   Compiling near-vm-runner v0.20.1
+   Compiling elliptic-curve v0.13.8
+   Compiling chrono v0.4.38
+   Compiling near-rpc-error-macro v0.20.1
+   Compiling rfc6979 v0.4.0
+   Compiling near-o11y v0.20.1
+   Compiling strum_macros v0.26.2
+   Compiling smart-default v0.6.0
+   Compiling bytesize v1.3.0
+   Compiling serde_derive_internals v0.29.1
+   Compiling strum v0.26.2
+   Compiling easy-ext v0.2.9
+   Compiling schemars v0.8.22
+   Compiling Inflector v0.11.4
+   Compiling near-primitives v0.20.1
+   Compiling schemars_derive v0.8.22
+   Compiling ecdsa v0.16.9
+   Compiling near-gas v0.2.5
+   Compiling near-token v0.2.0
+   Compiling dyn-clone v1.0.17
+   Compiling bs58 v0.5.1
+   Compiling near-sys v0.2.1
+   Compiling k256 v0.13.3
+   Compiling near-sdk v5.1.0
+   Compiling omnibounty-v3 v1.0.0 (/workspaces/omnibounty/contracts/near-v3)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 46s
+     Running unittests src/lib.rs (target/debug/deps/omnibounty_v3-8706f06a6807976d)
+
+running 135 tests
+test canon::tests::rejects_hostile_inputs ... ok
+test canon::tests::oracle_fixture_matrix ... ok
+test canon::tests::utf16_key_order_matches_js ... ok
+test criteria::tests::accept_deadline_challenge ... ok
+test criteria::tests::accept_merged ... ok
+test criteria::tests::accept_forbidden ... ok
+test criteria::tests::accept_multi_check ... ok
+test criteria::tests::accept_multi_winner ... ok
+test criteria::tests::accept_protected ... ok
+test criteria::tests::accept_simple_ci ... ok
+test criteria::tests::eyeball_case_matches_hand_verified_bytes ... ok
+test criteria::tests::accept_weighted ... ok
+test criteria::tests::non_bmp_key_order_matches_js_utf16 ... ok
+test criteria::tests::reject_bad_slug ... ok
+test criteria::tests::reject_duplicate_keys ... ok
+test criteria::tests::reject_glob_path ... ok
+test criteria::tests::reject_issue_repo_mismatch ... ok
+test criteria::tests::reject_leading_zero_amount ... ok
+test criteria::tests::reject_null_value ... ok
+test criteria::tests::reject_number_literal ... ok
+test criteria::tests::reject_policy_mismatch ... ok
+test criteria::tests::reject_unknown_field ... ok
+test criteria::tests::reject_zero_amount ... ok
+test criteria::tests::scanner_edges ... ok
+test criteria::tests::uint_edges ... ok
+test criteria::tests::utf16_length_bounds ... ok
+test criteria::tests::golden_hashes_match_typescript ... ok
+test ecrecover_equiv::host_ecrecover_gas_probe ... ok
+test ecrecover_equiv::high_s_twins_flag_policy ... ok
+test ecrecover_equiv::official_vectors_equivalence_relation ... ok
+test ecrecover_equiv::official_vectors_mock_matches_runtime_oracle ... ok
+test ecrecover_equiv::rs_edge_corpus_relation ... ok
+test ecrecover_equiv::wrapper_accepts_high_s_like_host ... ok
+test ecrecover_equiv::wrapper_unchanged_on_low_s_v01 ... ok
+test error::tests::codes_are_stable ... ok
+test mpc::tests::parses_valid_response ... ok
+test mpc::tests::rejects_malformed_responses ... ok
+test mpc::tests::request_serializes_to_v3_wire_shape ... ok
+test mpc::tests::signer_self_check_accepts_matching_and_rejects_other ... ok
+test mpc::tests::tagged_envelope_deserializes ... ok
+test normalize::tests::happy_paths ... ok
+test normalize::tests::oracle_fixture_matrix ... ok
+test normalize::tests::rejects_malformed ... ok
+test normalize::tests::u256_decimal_roundtrip_and_edges ... ok
+test ecrecover_equiv::recovery_message_independence ... ok
+test reclaim::tests::duplicate_signatures_rejected ... ok
+test reclaim::tests::evidence_digest_empty_order_duplicates ... ok
+test reclaim::tests::noncanonical_params_rejected ... ok
+test reclaim::tests::noncanonical_context_accepted_via_canonicalization ... ok
+test reclaim::tests::nullifier_key_matches_typescript_golden ... ok
+test reclaim::tests::spike_proof_verifies_with_sdk_native_forms ... ok
+test reclaim::tests::steam_vector_verifies_end_to_end ... ok
+test reclaim::tests::tampered_identifier_rejected ... ok
+test reclaim::tests::tampered_signature_rejected ... ok
+test rules::tests::accept_header_pin_enforced ... ok
+test reclaim::tests::wrong_witness_rejected ... ok
+test rules::tests::bound_mandated_sets_fit_matcher_cap ... ok
+test rules::tests::basecheck_split_values_and_coverage_rejected ... ok
+test rules::tests::checkrun_split_values_and_coverage_rejected ... ok
+test rules::tests::changed_files_substitution_ignored ... ok
+test rules::tests::close_ref_bound_to_covering_proof ... ok
+test rules::tests::contents_coverage_bound_to_supplying_proof ... ok
+test rules::tests::created_at_unified_and_future_capped ... ok
+test rules::tests::duplicate_mandated_capture_rejected ... ok
+test rules::tests::duplicate_python_style_capture_rejected ... ok
+test rules::tests::escape_and_row_patterns_pinned ... ok
+test rules::tests::evaluate_simple_ci_end_to_end ... ok
+test rules::tests::fail_to_pass_base_legs ... ok
+test rules::tests::files_rows_read_only_from_covering_proof ... ok
+test rules::tests::forged_identity_first_rejected ... ok
+test rules::tests::forged_pr_first_rejected ... ok
+test rules::tests::genuine_identity_first_accepted_with_forged_second ... ok
+test rules::tests::github_time_parser_vectors ... ok
+test rules::tests::files_rules_end_to_end ... ok
+test rules::tests::identity_binding_matrix ... ok
+test rules::tests::join_accepts_coherent_bundle_rejects_divergence ... ok
+test rules::tests::mandated_pr_set_byte_exact_pin ... ok
+test rules::tests::mandated_pr_set_matches_live_proven_shapes ... ok
+test rules::tests::matcher_capture_scan_shapes ... ok
+test rules::tests::protected_path_matching_adversarial ... ok
+test rules::tests::legitimate_multi_proof_bundles_accepted ... ok
+test rules::tests::review_slot_binding_accepts_bound_rejects_forged ... ok
+test rules::tests::url_templates_mirror_typescript_vectors ... ok
+test rules::tests::review_two_slots_independently_bound ... ok
+test tests::admin_guards_and_epoch_registry ... ok
+test tests::callback_applies_while_paused ... ok
+test tests::create_commits_criteria_and_copies_slots ... ok
+test tests::create_rejects_duplicates_bad_input_and_paused ... ok
+test tests::dry_qualify_mirrors_qualify_without_mutating ... ok
+test tests::evidence_commitment_auditor_reproducible_and_pinned ... ok
+test tests::duplicate_pr_and_ordered_multi_slot ... ok
+test tests::expired_voucher_reaped_for_fresh_retry_live_voucher_blocks ... ok
+test tests::finalize_claim_dispatches_mpc_promise ... ok
+test tests::fail_to_pass_end_to_end ... ok
+test tests::finalize_gates_window_signer_and_double_dispatch ... ok
+test tests::forged_identity_first_rejected_at_qualify ... ok
+test tests::funding_is_sponsor_only_and_once ... ok
+test tests::gas_finalize_path ... ok
+test tests::gas_create_bounty_by_criteria_size ... ok
+test tests::gas_host_cost_by_bundle_shape ... ok
+test tests::gas_k256_recovery_native_timing ... ok
+test tests::gas_max_payload_bundle ... ok
+test tests::high_s_witness_signature_qualifies ... ok
+test tests::identity_impostor_cannot_claim_others_pr ... ok
+test tests::identity_missing_expired_and_foreign_rejected ... ok
+test tests::identity_reusable_across_bounties_but_bound_per_claim ... ok
+test tests::mpc_apply_success_failure_and_retry_loop ... ok
+test tests::ownership_transfer_is_two_step ... ok
+test tests::qualified_claims_survive_deadline_and_epoch_removal ... ok
+test tests::qualify_enforces_freshness_windows ... ok
+test tests::qualify_rejects_unknown_and_miscounted_witnesses ... ok
+test tests::qualify_rejects_wrong_binding_stale_and_future_proofs ... ok
+test tests::qualify_structural_gates ... ok
+test tests::qualify_success_consumes_slot_seq_and_nullifiers ... ok
+test tests::qualify_window_deadline_boundary ... ok
+test tests::qualify_window_gate_deadline_zero_and_overflow ... ok
+test tests::regen_e2e_fixture ... ignored
+test tests::regen_xsuite_fixture ... ignored
+test tests::relay_queue_and_views ... ok
+test tests::relay_queue_orders_by_verified_authorship_time ... ok
+test tests::gas_qualify_many_shapes ... ok
+test tests::signer_rotation_midflight_releases_and_retries_clean ... ok
+test tests::storage_bounty_ids_push_is_eight_bytes ... ok
+test tests::slot_bounds_and_total_overflow ... ok
+test tests::storage_owner_mpc_contract_delta_is_name_length_delta ... ok
+test tests::storage_owner_accept_always_shrinks ... ok
+test tests::storage_owner_mpc_signer_first_set_is_twenty_bytes ... ok
+test tests::storage_state_sizes_bounded ... ok
+test tests::storage_owner_transfer_bounded_by_name_length ... ok
+test tests::stuck_dispatch_superseded_after_timeout ... ok
+test tests::total_payload_cap_boundaries ... ok
+test tests::u256_checked_arithmetic ... ok
+test voucher::tests::constants_match_literals ... ok
+test voucher::tests::oracle_fixture_digests_match ... ok
+test tests::total_signature_cap_boundaries ... ok
+
+test result: ok. 133 passed; 0 failed; 2 ignored; 0 measured; 0 filtered out; finished in 6.88s
+
+==> regen fresh claim fixture (7-day proofs)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.04s
+     Running unittests src/lib.rs (target/debug/deps/omnibounty_v3-8706f06a6807976d)
+
+running 1 test
+wrote /workspaces/omnibounty/contracts/near-v3/../../testdata/v3/xsuite-claim.json (generated_at=1794654433)
+test tests::regen_xsuite_fixture ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 134 filtered out; finished in 0.08s
+
+==> build both WASMs (Rust 1.86)
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.12
+   Compiling quote v1.0.47
+   Compiling equivalent v1.0.1
+   Compiling hashbrown v0.17.1
+   Compiling syn v3.0.9
+   Compiling syn v2.0.119
+   Compiling serde_derive v1.0.229
+   Compiling serde_core v1.0.229
+   Compiling indexmap v2.14.2
+   Compiling serde v1.0.229
+   Compiling winnow v0.5.40
+   Compiling toml_datetime v0.6.6
+   Compiling toml_edit v0.21.1
+   Compiling serde_json v1.0.117
+   Compiling cfg_aliases v0.2.1
+   Compiling borsh v1.8.1
+   Compiling proc-macro-crate v3.1.0
+   Compiling once_cell v1.19.0
+   Compiling borsh-derive v1.8.1
+   Compiling fnv v1.0.7
+   Compiling ident_case v1.0.1
+   Compiling rustversion v1.0.23
+   Compiling darling_core v0.20.9
+   Compiling darling_macro v0.20.9
+   Compiling near-sdk-macros v5.1.0
+   Compiling wee_alloc v0.4.5
+   Compiling itoa v1.0.18
+   Compiling heck v0.4.1
+   Compiling ryu v1.0.18
+   Compiling strum_macros v0.26.2
+   Compiling darling v0.20.9
+   Compiling serde_derive_internals v0.29.1
+   Compiling strum v0.26.2
+   Compiling memory_units v0.4.0
+   Compiling cfg-if v0.1.10
+   Compiling Inflector v0.11.4
+   Compiling schemars v0.8.22
+   Compiling schemars_derive v0.8.22
+   Compiling near-gas v0.2.5
+   Compiling near-account-id v1.1.4
+   Compiling near-token v0.2.0
+   Compiling base64 v0.21.7
+   Compiling bs58 v0.5.1
+   Compiling dyn-clone v1.0.17
+   Compiling near-sys v0.2.1
+   Compiling near-sdk v5.1.0
+   Compiling hex v0.4.3
+   Compiling omnibounty-v3 v1.0.0 (/workspaces/omnibounty/contracts/near-v3)
+    Finished `release` profile [optimized] target(s) in 46.83s
+   Compiling version_check v0.9.4
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.12
+   Compiling quote v1.0.47
+   Compiling generic-array v0.14.7
+   Compiling zeroize v1.8.1
+   Compiling syn v2.0.119
+   Compiling typenum v1.20.1
+   Compiling subtle v2.6.1
+   Compiling proc-macro-error-attr v1.0.4
+   Compiling const-oid v0.9.6
+   Compiling proc-macro-error v1.0.4
+   Compiling hashbrown v0.17.1
+   Compiling equivalent v1.0.1
+   Compiling indexmap v2.14.2
+   Compiling block-buffer v0.10.4
+   Compiling crypto-common v0.1.6
+   Compiling winnow v0.5.40
+   Compiling serde_derive v1.0.203
+   Compiling toml_datetime v0.6.6
+   Compiling toml_edit v0.21.1
+   Compiling digest v0.10.7
+   Compiling serde v1.0.203
+   Compiling rand_core v0.6.4
+   Compiling cfg_aliases v0.2.1
+   Compiling syn_derive v0.1.8
+   Compiling borsh v1.5.1
+   Compiling proc-macro-crate v3.1.0
+   Compiling serde_json v1.0.117
+   Compiling once_cell v1.19.0
+   Compiling borsh-derive v1.5.1
+   Compiling fnv v1.0.7
+   Compiling rustversion v1.0.23
+   Compiling ident_case v1.0.1
+   Compiling darling_core v0.20.9
+   Compiling ff v0.13.0
+   Compiling der v0.7.9
+   Compiling base16ct v0.2.0
+   Compiling sec1 v0.7.3
+   Compiling darling_macro v0.20.9
+   Compiling group v0.13.0
+   Compiling crypto-bigint v0.5.5
+   Compiling hmac v0.12.1
+   Compiling near-sdk-macros v5.1.0
+   Compiling heck v0.4.1
+   Compiling wee_alloc v0.4.5
+   Compiling ryu v1.0.18
+   Compiling itoa v1.0.18
+   Compiling strum_macros v0.26.2
+   Compiling rfc6979 v0.4.0
+   Compiling elliptic-curve v0.13.8
+   Compiling darling v0.20.9
+   Compiling signature v2.2.0
+   Compiling Inflector v0.11.4
+   Compiling memory_units v0.4.0
+   Compiling cfg-if v0.1.10
+   Compiling strum v0.26.2
+   Compiling cfg-if v1.0.0
+   Compiling sha2 v0.10.8
+   Compiling ecdsa v0.16.9
+   Compiling near-token v0.2.0
+   Compiling near-account-id v1.1.4
+   Compiling near-gas v0.2.5
+   Compiling bs58 v0.5.1
+   Compiling near-sys v0.2.1
+   Compiling base64 v0.21.7
+   Compiling k256 v0.13.3
+   Compiling near-sdk v5.1.0
+   Compiling hex v0.4.3
+   Compiling mock-mpc v1.0.0 (/workspaces/omnibounty/contracts/near-v3/tests/mock-mpc)
+    Finished `release` profile [optimized] target(s) in 43.48s
+==> canonicalize + verify
+target/wasm32-unknown-unknown/release/omnibounty_v3.wasm: 96 sites canonicalized {'call_indirect': 95, 'mem_reserved': 1}, 708033 -> 707653 bytes
+tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm: 95 sites canonicalized {'call_indirect': 94, 'mem_reserved': 1}, 271737 -> 271361 bytes
+target/wasm32-unknown-unknown/release/omnibounty_v3.wasm: canonical
+tests/mock-mpc/target/wasm32-unknown-unknown/release/mock_mpc.wasm: canonical
+==> xsuite (sandbox)
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.12
+   Compiling quote v1.0.47
+   Compiling jobserver v0.1.35
+   Compiling cc v1.11.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.9
+   Compiling zeroize_derive v1.5.0
+   Compiling zeroize v1.8.1
+   Compiling generic-array v0.14.7
+   Compiling serde_derive v1.0.229
+   Compiling pkg-config v0.3.34
+   Compiling smallvec v1.16.5
+   Compiling lock_api v0.4.12
+   Compiling crypto-common v0.1.6
+   Compiling parking_lot_core v0.9.10
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling syn v1.0.109
+   Compiling serde v1.0.229
+   Compiling parking_lot v0.12.3
+   Compiling bitflags v2.13.2
+   Compiling tokio-macros v2.3.0
+   Compiling tokio v1.38.0
+   Compiling borsh-derive v1.8.1
+   Compiling tracing-attributes v0.1.27
+   Compiling tracing v0.1.40
+   Compiling borsh v1.8.1
+   Compiling aho-corasick v1.1.3
+   Compiling regex-syntax v0.8.11
+   Compiling serde_json v1.0.117
+   Compiling rustix v0.38.34
+   Compiling semver v1.0.28
+   Compiling linux-raw-sys v0.4.14
+   Compiling base64 v0.22.1
+   Compiling regex-automata v0.4.18
+   Compiling regex v1.13.1
+   Compiling getrandom v0.3.4
+   Compiling sha2 v0.10.8
+   Compiling thiserror-impl v1.0.61
+   Compiling byteorder v1.5.0
+   Compiling darling_core v0.20.9
+   Compiling thiserror v1.0.61
+   Compiling near-account-id v1.1.4
+   Compiling tokio-util v0.7.11
+   Compiling ring v0.17.8
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.6.0
+   Compiling darling_macro v0.20.9
+   Compiling derive_arbitrary v1.5.0
+   Compiling rustls-pki-types v1.16.0
+   Compiling enum-map-derive v0.17.0
+   Compiling crc32fast v1.5.5
+   Compiling enum-map v2.7.3
+   Compiling arbitrary v1.5.0
+   Compiling num-rational v0.3.2
+   Compiling unicode-normalization v0.1.23
+   Compiling darling v0.20.9
+   Compiling rustc_version v0.4.0
+   Compiling form_urlencoded v1.2.1
+   Compiling signature v2.2.0
+   Compiling hex v0.4.3
+   Compiling serde_repr v0.1.19
+   Compiling unicode-bidi v0.3.15
+   Compiling untrusted v0.9.0
+   Compiling spin v0.9.8
+   Compiling curve25519-dalek v4.1.3
+   Compiling idna v0.5.0
+   Compiling strum_macros v0.24.3
+   Compiling secp256k1-sys v0.8.1
+   Compiling deranged v0.5.9
+   Compiling strum v0.24.1
+   Compiling time v0.3.55
+   Compiling serde_with_macros v3.8.1
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling pin-project-internal v1.1.5
+   Compiling adler v1.0.2
+   Compiling miniz_oxide v0.7.3
+   Compiling serde_with v3.8.1
+   Compiling pin-project v1.1.5
+   Compiling prost-derive v0.9.0
+   Compiling uint v0.9.5
+   Compiling ed25519 v2.2.3
+   Compiling lzma-sys v0.1.20
+   Compiling bzip2-sys v0.1.13+1.0.8
+   Compiling rustls v0.22.4
+   Compiling subtle v2.6.1
+   Compiling vcpkg v0.2.15
+   Compiling thiserror v2.0.21
+   Compiling crc-catalog v2.5.0
+   Compiling crc v3.4.0
+   Compiling rustix v1.1.6
+   Compiling openssl-sys v0.9.102
+   Compiling ed25519-dalek v2.1.1
+   Compiling primitive-types v0.10.1
+   Compiling secp256k1 v0.27.0
+   Compiling flate2 v1.0.30
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive_internals v0.29.1
+   Compiling zstd-safe v7.4.0
+   Compiling schemars v0.8.22
+   Compiling linux-raw-sys v0.12.1
+   Compiling simd-adler32 v0.3.10
+   Compiling bumpalo v3.20.3
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling which v4.4.2
+   Compiling schemars_derive v0.8.22
+   Compiling http v1.5.0
+   Compiling derive_more-impl v2.1.1
+   Compiling fastrand v2.5.0
+   Compiling near-schema-checker-core v0.31.1
+   Compiling near-schema-checker-macro v0.31.1
+   Compiling zip v2.6.1
+   Compiling near-schema-checker-lib v0.31.1
+   Compiling tempfile v3.27.0
+   Compiling derive_more v2.1.1
+   Compiling bzip2 v0.5.2
+   Compiling xz2 v0.1.7
+   Compiling prost-build v0.9.0
+   Compiling prost v0.9.0
+   Compiling webpki-roots v0.26.1
+   Compiling async-trait v0.1.80
+   Compiling getrandom v0.2.15
+   Compiling deflate64 v0.1.12
+   Compiling constant_time_eq v0.3.1
+   Compiling sha3 v0.10.8
+   Compiling derive_more v0.99.17
+   Compiling prost-types v0.9.0
+   Compiling zstd v0.13.4
+   Compiling http-body v1.1.0
+   Compiling inout v0.1.3
+   Compiling xattr v1.3.1
+   Compiling tokio-stream v0.1.15
+   Compiling hmac v0.12.1
+   Compiling filetime v0.2.23
+   Compiling dirs-sys-next v0.1.2
+   Compiling openssl v0.10.64
+   Compiling foreign-types-shared v0.1.1
+   Compiling radium v0.7.0
+   Compiling foreign-types v0.3.2
+   Compiling chrono v0.4.38
+   Compiling dirs-next v2.0.0
+   Compiling tar v0.4.40
+   Compiling cipher v0.4.4
+   Compiling rustls-webpki v0.102.4
+   Compiling h2 v0.3.26
+   Compiling near-primitives-core v0.31.1
+   Compiling url v2.5.0
+   Compiling Inflector v0.11.4
+   Compiling fs4 v0.6.6
+   Compiling bytesize v1.3.0
+   Compiling openssl-macros v0.1.1
+   Compiling atomic-waker v1.1.2
+   Compiling tap v1.0.1
+   Compiling siphasher v0.3.11
+   Compiling native-tls v0.2.12
+   Compiling is_executable v0.1.2
+   Compiling hyper v0.14.28
+   Compiling lzma-rs v0.3.0
+   Compiling wyz v0.5.1
+   Compiling h2 v0.4.20
+   Compiling opentelemetry v0.17.0
+   Compiling pbkdf2 v0.12.2
+   Compiling aes v0.8.4
+   Compiling tonic-build v0.6.2
+   Compiling near-primitives-core v0.20.1
+   Compiling sha1 v0.10.6
+   Compiling near-config-utils v0.31.1
+   Compiling zopfli v0.8.4
+   Compiling tokio-io-timeout v1.2.0
+   Compiling blake2 v0.10.6
+   Compiling crypto-mac v0.8.0
+   Compiling digest v0.9.0
+   Compiling cipher v0.2.5
+   Compiling async-stream-impl v0.3.5
+   Compiling openssl-probe v0.1.5
+   Compiling near-sandbox-utils v0.15.1
+   Compiling either v1.19.0
+   Compiling funty v2.0.0
+   Compiling near-stdx v0.31.1
+   Compiling near-crypto v0.31.1
+   Compiling bitvec v1.0.1
+   Compiling itertools v0.12.1
+   Compiling blake2 v0.9.2
+   Compiling tracing-subscriber v0.3.18
+   Compiling async-stream v0.3.5
+   Compiling c2-chacha v0.3.3
+   Compiling hyper-timeout v0.4.1
+   Compiling ureq v2.9.7
+   Compiling opentelemetry-otlp v0.10.0
+   Compiling hyper v1.12.0
+   Compiling tower v0.4.13
+   Compiling near-parameters v0.31.1
+   Compiling near-fmt v0.31.1
+   Compiling near_schemafy_core v0.7.0
+   Compiling tracing-futures v0.2.5
+   Compiling near-config-utils v0.20.1
+   Compiling near-time v0.31.1
+   Compiling uriparse v0.6.4
+   Compiling ordered-float v4.6.0
+   Compiling tokio-util v0.6.10
+   Compiling sync_wrapper v1.0.2
+   Compiling smart-default v0.7.1
+   Compiling socket2 v0.6.5
+   Compiling base64 v0.23.1
+   Compiling ipnet v2.9.0
+   Compiling binary-install v0.4.1
+   Compiling hyper-util v0.1.21
+   Compiling tonic v0.6.2
+   Compiling clap_derive v4.6.7
+   Compiling near-crypto v0.20.1
+   Compiling near-primitives v0.31.1
+   Compiling tower v0.5.3
+   Compiling near_schemafy_lib v0.7.0
+   Compiling near-abi v0.4.5
+   Compiling tokio-native-tls v0.3.1
+   Compiling http-body-util v0.1.5
+   Compiling actix-rt v2.9.0
+   Compiling actix-macros v0.2.4
+   Compiling actix_derive v0.6.1
+   Compiling fs2 v0.4.3
+   Compiling prettyplease v0.1.25
+   Compiling zeropool-bn v0.5.11
+   Compiling near-parameters v0.20.1
+   Compiling actix v0.13.3
+   Compiling tracing-opentelemetry v0.17.4
+   Compiling near-chain-configs v0.31.1
+   Compiling hyper-tls v0.6.0
+   Compiling prometheus v0.13.4
+   Compiling near-abi-client-impl v0.1.1
+   Compiling tower-http v0.6.11
+   Compiling clap v4.6.7
+   Compiling tracing-appender v0.2.3
+   Compiling near-fmt v0.20.1
+   Compiling opentelemetry-semantic-conventions v0.9.0
+   Compiling serde_urlencoded v0.7.1
+   Compiling near-rpc-error-core v0.20.1
+   Compiling ripemd v0.1.3
+   Compiling der v0.7.9
+   Compiling encoding_rs v0.8.34
+   Compiling mime v0.3.17
+   Compiling sec1 v0.7.3
+   Compiling near-vm-runner v0.20.1
+   Compiling reqwest v0.12.28
+   Compiling near-rpc-error-macro v0.20.1
+   Compiling near-o11y v0.20.1
+   Compiling near-abi-client-macros v0.1.1
+   Compiling near-jsonrpc-primitives v0.31.1
+   Compiling near-workspaces v0.21.0
+   Compiling reed-solomon-erasure v4.0.2
+   Compiling strum_macros v0.26.2
+   Compiling jsonptr v0.4.7
+   Compiling smart-default v0.6.0
+   Compiling crypto-bigint v0.5.5
+   Compiling convert_case v0.5.0
+   Compiling near-abi-client v0.1.1
+   Compiling elliptic-curve v0.13.8
+   Compiling near-sdk-macros v5.1.0
+   Compiling near-primitives v0.20.1
+   Compiling json-patch v2.0.0
+   Compiling near-jsonrpc-client v0.18.0
+   Compiling near-gas v0.3.7
+   Compiling rfc6979 v0.4.0
+   Compiling tokio-retry v0.3.0
+   Compiling near-gas v0.2.5
+   Compiling near-token v0.2.0
+   Compiling near-token v0.3.6
+   Compiling near-sdk v5.1.0
+   Compiling ecdsa v0.16.9
+   Compiling k256 v0.13.3
+   Compiling omnibounty-v3 v1.0.0 (/workspaces/omnibounty/contracts/near-v3)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4m 26s
+     Running tests/xsuite.rs (target/debug/deps/xsuite-cb1c1b38485cebe7)
+
+running 6 tests
+2026-11-14T11:13:11.600979Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:11.601300Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:11.601334Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:11.601351Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:11.601374Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:11.602778Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:11.602814Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:11.602835Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:11.602845Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:11.602855Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test identity_binding_rejects_impostors ... ok
+test full_lifecycle_qualify_finalize_callback ... ok
+2026-11-14T11:13:23.699082Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:23.699205Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:23.699247Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:23.699280Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:23.699312Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:23.771895Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:23.771944Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:23.771967Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:23.771980Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:23.771994Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test replay_duplicate_and_ordered_slots ... ok
+2026-11-14T11:13:35.811014Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:35.811054Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:35.811074Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:35.811085Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:35.811095Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test mpc_failures_release_for_retry ... ok
+2026-11-14T11:13:43.406511Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:43.406553Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-14T11:13:43.406585Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:43.406597Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-14T11:13:43.406609Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test same_evidence_reusable_across_bounties ... ok
+test window_storage_auth_and_gas_guards ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 44.17s
+
+ALL GREEN

@@ -89,13 +89,18 @@ export function sleep(ms) {
 }
 
 export class Relayer {
-  constructor({ config, near, escrow, store, submitter = null, log = console.log }) {
+  constructor({ config, near, escrow, store, submitter = null, log = console.log, testNowSec = null }) {
     this.config = config;
     this.near = near;
     this.escrow = escrow;
     this.store = store;
     this.submitter = submitter;
     this.log = log;
+    // Test-only clock override (local replay): when set, voucher expiry
+    // is evaluated against this timestamp instead of wall-clock time.
+    // Only the e2e harness sets it; production construction (fromEnv)
+    // never does, so live validation always uses real time.
+    this.testNowSec = testNowSec;
     // Health/shutdown bookkeeping only; never consulted by validation,
     // discovery, or submission logic.
     this.health = { startedAt: new Date().toISOString(), lastPollAt: null, lastPollOk: null, lastError: null };
@@ -298,6 +303,10 @@ export class Relayer {
       expectedChainId: this.config.expectedChainId,
       escrowAddress: this.config.escrowAddress,
       mpcSigner: this.config.mpcSigner,
+      // Null in production (validate falls back to wall-clock time);
+      // the fixture epoch under local replay. Expiry only — digest,
+      // signature, and schedule checks are clock-independent.
+      nowSec: this.testNowSec,
     });
     if (!checked.ok) {
       this.log(`skip ${digestHint}: invalid (${checked.reason})`);

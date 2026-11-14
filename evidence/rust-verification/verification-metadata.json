@@ -1,0 +1,104 @@
+{
+  "repository": "Web3smallie/omnibounty",
+  "commit": "63d11a4015a7ab4aa755e989f0bbc1b2d5c978af",
+  "branch": "main",
+  "generated_at_utc": "2026-11-14T11:18:05Z",
+  "scope": "Recorded execution evidence for the Rust verification suite. Inspection aid only; it does not independently rerun the tests (see Method 3 for independent rebuild).",
+  "tree_note": "Worktree matched the commit exactly during all runs (only untracked path: audit-backup/, excluded by design). run-xsuite.sh regenerates testdata/v3/xsuite-claim.json as part of its documented procedure; the file was restored to the committed state after the run.",
+  "environment": {
+    "os": "Linux 6.8.0-1070-azure x86_64",
+    "rustc_stable_unit_xsuite": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+    "rustc_wasm_build": "rustc 1.86.0 (05f9846f8 2025-03-31)",
+    "rustc_cargo_clippy_fmt": "rustc 1.100.0 (0ef1bc386 2026-11-09) / cargo 1.100.0 (3acc79c0c 2026-11-05)",
+    "rustup": "rustup 1.29.3 (edbc831ce 2026-11-02)",
+    "near_sandbox": "neard release 2.9.0, commit 46a0ac8d463f8601f8573f377d688b74c6b49700, features [default, json_rpc, rosetta_rpc, sandbox]",
+    "python": "Python 3.14.2",
+    "toolchain_note": "Clippy/rustfmt ran under stable 1.100.0 via RUSTUP_HOME/CARGO_HOME override because the default stable 1.99.1 install lacks those components (read-only toolchain dir). Unit tests and xsuite ran under the ambient stable 1.99.1. All versions recorded per execution below."
+  },
+  "executions": [
+    {
+      "name": "A. Rust unit tests",
+      "command": "cargo +stable test --locked --lib",
+      "env_overrides": {},
+      "cwd": "contracts/near-v3",
+      "started_at_utc": "2026-11-14T11:03:43Z",
+      "ended_at_utc": "2026-11-14T11:03:53Z",
+      "exit_code": 0,
+      "result": "pass",
+      "log": "rust-unit-tests.log",
+      "summary": "133 passed; 0 failed; 2 ignored (ignored: regen_xsuite_fixture, regen_e2e_fixture \u2014 invoked explicitly by their runners)",
+      "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+    },
+    {
+      "name": "B. XSuite",
+      "command": "./run-xsuite.sh",
+      "env_overrides": {
+        "HOME": "/tmp/m2home",
+        "CARGO_HOME": "/tmp/m3clean/home/.cargo",
+        "RUSTUP_HOME": "/home/codespace/.rustup",
+        "reason": "Default HOME is read-only in this environment, so the sandbox-binary cache was redirected to a writable HOME. Toolchains still resolved from the ambient install (stable 1.99.1 + 1.86.0); registry reads came from a complete cache."
+      },
+      "cwd": "contracts/near-v3",
+      "started_at_utc": "2026-11-14T11:04:02Z",
+      "ended_at_utc": "2026-11-14T11:13:55Z",
+      "exit_code": 0,
+      "result": "pass",
+      "log": "xsuite.log",
+      "summary": "6 passed; 0 failed (fresh fixture regen + both 1.86 WASM builds + canonicalization gates + sandbox suite)",
+      "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13) for tests; rustc 1.86.0 (05f9846f8 2025-03-31) for WASM",
+      "sandbox": "neard release 2.9.0 (commit 46a0ac8d463f8601f8573f377d688b74c6b49700), downloaded fresh during the run"
+    },
+    {
+      "name": "C. Clippy",
+      "command": "cargo +stable clippy --locked --all-targets -- -D warnings",
+      "env_overrides": {
+        "RUSTUP_HOME": "/tmp/m3clean/home/.rustup",
+        "CARGO_HOME": "/tmp/m3clean/home/.cargo",
+        "reason": "Ambient stable 1.99.1 lacks clippy/rustfmt components (read-only install); ran under stable 1.100.0 with components. Same source tree, same lockfile, same flags."
+      },
+      "cwd": "contracts/near-v3",
+      "started_at_utc": "2026-11-14T11:17:05Z",
+      "ended_at_utc": "2026-11-14T11:17:07Z",
+      "exit_code": 0,
+      "result": "pass",
+      "log": "clippy.log",
+      "summary": "zero warnings with -D warnings (workspace crate re-checked after touch; dependency results served from content-addressed cache after a full green run minutes prior)",
+      "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)"
+    },
+    {
+      "name": "D. Formatting",
+      "command": "cargo +stable fmt --check",
+      "env_overrides": {
+        "RUSTUP_HOME": "/tmp/m3clean/home/.rustup",
+        "CARGO_HOME": "/tmp/m3clean/home/.cargo",
+        "reason": "Same toolchain override as Clippy (rustfmt unavailable in ambient stable install)."
+      },
+      "cwd": "contracts/near-v3",
+      "started_at_utc": "2026-11-14T11:16:27Z",
+      "ended_at_utc": "2026-11-14T11:16:28Z",
+      "exit_code": 0,
+      "result": "pass",
+      "log": "fmt-check.log",
+      "summary": "clean (fmt --check prints nothing on success; empty log is the passing output)",
+      "rustc": "rustc 1.100.0 (0ef1bc386 2026-11-09)"
+    }
+  ],
+  "files": {
+    "rust-unit-tests.log": {
+      "bytes": 7967,
+      "sha256": "746262494d561e3d88c81c75e87b5b548d20b666775db6ff4e0433d63924555c"
+    },
+    "xsuite.log": {
+      "bytes": 37628,
+      "sha256": "52a617a4376329045ac02767498dedd314b14b47a8969522a8ad17edeb0ca202"
+    },
+    "clippy.log": {
+      "bytes": 149,
+      "sha256": "537b723dfdb6a4f5f70fbaf82ffafc113390d39a015a595123b0526660cce31b"
+    },
+    "fmt-check.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

@@ -1,0 +1,35 @@
+OmniBounty V3 deployment-artifact backup
+==========================================
+Date (UTC): 2026-11-13
+Branch: codespace-v3-diagnostics
+Commit at backup: e78c75364caaeba0cafc77047d20e7031e949830
+Contract: omnibounty-v3.testnet (NEAR testnet)
+
+original/omnibounty_v3.deployed-8d578171.wasm
+  Source path: contracts/near-v3/target/wasm32-unknown-unknown/release/omnibounty_v3.wasm
+  SHA-256: 8d5781711383f5351bd96e856daae46408518b77ee7c2d9203931859e1cda32d
+  Size: 707229 bytes
+  Verified: byte-identical (cmp) to the source file at backup time; read-only (a-w).
+  Provenance: byte-identical to on-chain view_code and
+  view_account code_hash AWjsoDmCq2k6CBgnrQjNZuByG5qtRgsvqJhQo7q6gStt (both verified live).
+  Reproducible: pristine HEAD source + rustc 1.86.0 release wasm build +
+  tools/canon_leb.py yields these exact bytes.
+
+corrected/omnibounty_v3.fixed.wasm -- REMOVED FROM TREE (operator holds offline copy).
+  Intermediate build from commit 1fb21d4 (five Clippy fixes, pre-rustfmt):
+  SHA-256 660bed2dc99b78b9c3cb6550398f5a3f879b2efc0344b139b7f189cefaf8e938,
+  707605 bytes, canonical. Never deployed; superseded by fixed-f5b2539.wasm below.
+
+corrected/omnibounty_v3.fixed-f5b2539.wasm
+  Built: 2026-11-13 from commit f5b2539 (1fb21d4 + rustfmt whitespace/
+  trailing-comma only; token stream otherwise identical, unit tests 133/0).
+  Same 1.86.0 release + canon_leb.py procedure (96 sites, 707985 -> 707605).
+  SHA-256: 766c6b14accb4730b634a5d659a10ae804e3e1eb86c77fe1ba9a1fefc02a94d4
+  Size: 707605 bytes
+  Diff vs 660bed2d: data section only, same length, 94 bytes
+  (embedded panic-location line numbers); code section bit-identical.
+  Status: read-only (a-w). NOT YET DEPLOYED. This is the current
+  deployment candidate (branch head).
+
+This directory is UNTRACKED by design: it must never be committed.
+Excluded from the lint-fix commit.

@@ -1,0 +1,315 @@
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.12
+   Compiling quote v1.0.47
+   Compiling jobserver v0.1.35
+   Compiling cc v1.11.1
+   Compiling syn v2.0.119
+   Compiling syn v3.0.9
+   Compiling zeroize_derive v1.5.0
+   Compiling zeroize v1.8.1
+   Compiling generic-array v0.14.7
+   Compiling serde_derive v1.0.229
+   Compiling pkg-config v0.3.34
+   Compiling smallvec v1.16.5
+   Compiling lock_api v0.4.12
+   Compiling crypto-common v0.1.6
+   Compiling parking_lot_core v0.9.10
+   Compiling block-buffer v0.10.4
+   Compiling digest v0.10.7
+   Compiling syn v1.0.109
+   Compiling serde v1.0.229
+   Compiling parking_lot v0.12.3
+   Compiling bitflags v2.13.2
+   Compiling tokio-macros v2.3.0
+   Compiling tokio v1.38.0
+   Compiling borsh-derive v1.8.1
+   Compiling tracing-attributes v0.1.27
+   Compiling tracing v0.1.40
+   Compiling borsh v1.8.1
+   Compiling aho-corasick v1.1.3
+   Compiling rustix v0.38.34
+   Compiling serde_json v1.0.117
+   Compiling regex-syntax v0.8.11
+   Compiling linux-raw-sys v0.4.14
+   Compiling base64 v0.22.1
+   Compiling semver v1.0.28
+   Compiling regex-automata v0.4.18
+   Compiling getrandom v0.3.4
+   Compiling sha2 v0.10.8
+   Compiling thiserror-impl v1.0.61
+   Compiling regex v1.13.1
+   Compiling byteorder v1.5.0
+   Compiling darling_core v0.20.9
+   Compiling thiserror v1.0.61
+   Compiling near-account-id v1.1.4
+   Compiling tokio-util v0.7.11
+   Compiling ring v0.17.8
+   Compiling tinyvec_macros v0.1.1
+   Compiling tinyvec v1.6.0
+   Compiling darling_macro v0.20.9
+   Compiling derive_arbitrary v1.5.0
+   Compiling rustls-pki-types v1.16.0
+   Compiling enum-map-derive v0.17.0
+   Compiling crc32fast v1.5.5
+   Compiling enum-map v2.7.3
+   Compiling arbitrary v1.5.0
+   Compiling num-rational v0.3.2
+   Compiling unicode-normalization v0.1.23
+   Compiling darling v0.20.9
+   Compiling rustc_version v0.4.0
+   Compiling form_urlencoded v1.2.1
+   Compiling signature v2.2.0
+   Compiling hex v0.4.3
+   Compiling serde_repr v0.1.19
+   Compiling spin v0.9.8
+   Compiling unicode-bidi v0.3.15
+   Compiling untrusted v0.9.0
+   Compiling curve25519-dalek v4.1.3
+   Compiling idna v0.5.0
+   Compiling strum_macros v0.24.3
+   Compiling secp256k1-sys v0.8.1
+   Compiling deranged v0.5.9
+   Compiling strum v0.24.1
+   Compiling time v0.3.55
+   Compiling serde_with_macros v3.8.1
+   Compiling zstd-sys v2.1.2+zstd.1.5.7
+   Compiling pin-project-internal v1.1.5
+   Compiling curve25519-dalek-derive v0.1.1
+   Compiling adler v1.0.2
+   Compiling miniz_oxide v0.7.3
+   Compiling pin-project v1.1.5
+   Compiling serde_with v3.8.1
+   Compiling prost-derive v0.9.0
+   Compiling uint v0.9.5
+   Compiling ed25519 v2.2.3
+   Compiling bzip2-sys v0.1.13+1.0.8
+   Compiling lzma-sys v0.1.20
+   Compiling subtle v2.6.1
+   Compiling vcpkg v0.2.15
+   Compiling thiserror v2.0.21
+   Compiling crc-catalog v2.5.0
+   Compiling rustls v0.22.4
+   Compiling crc v3.4.0
+   Compiling rustix v1.1.6
+   Compiling openssl-sys v0.9.102
+   Compiling ed25519-dalek v2.1.1
+   Compiling primitive-types v0.10.1
+   Compiling secp256k1 v0.27.0
+   Compiling flate2 v1.0.30
+   Compiling thiserror-impl v2.0.21
+   Compiling serde_derive_internals v0.29.1
+   Compiling linux-raw-sys v0.12.1
+   Compiling simd-adler32 v0.3.10
+   Compiling bumpalo v3.20.3
+   Compiling zstd-safe v7.4.0
+   Compiling schemars v0.8.22
+   Compiling which v4.4.2
+   Compiling serde_yaml v0.9.34+deprecated
+   Compiling schemars_derive v0.8.22
+   Compiling http v1.5.0
+   Compiling derive_more-impl v2.1.1
+   Compiling near-schema-checker-macro v0.31.1
+   Compiling zip v2.6.1
+   Compiling fastrand v2.5.0
+   Compiling near-schema-checker-core v0.31.1
+   Compiling near-schema-checker-lib v0.31.1
+   Compiling tempfile v3.27.0
+   Compiling derive_more v2.1.1
+   Compiling xz2 v0.1.7
+   Compiling bzip2 v0.5.2
+   Compiling prost-build v0.9.0
+   Compiling prost v0.9.0
+   Compiling webpki-roots v0.26.1
+   Compiling async-trait v0.1.80
+   Compiling getrandom v0.2.15
+   Compiling deflate64 v0.1.12
+   Compiling constant_time_eq v0.3.1
+   Compiling derive_more v0.99.17
+   Compiling sha3 v0.10.8
+   Compiling prost-types v0.9.0
+   Compiling zstd v0.13.4
+   Compiling http-body v1.1.0
+   Compiling inout v0.1.3
+   Compiling xattr v1.3.1
+   Compiling tokio-stream v0.1.15
+   Compiling hmac v0.12.1
+   Compiling filetime v0.2.23
+   Compiling dirs-sys-next v0.1.2
+   Compiling openssl v0.10.64
+   Compiling foreign-types-shared v0.1.1
+   Compiling radium v0.7.0
+   Compiling foreign-types v0.3.2
+   Compiling dirs-next v2.0.0
+   Compiling chrono v0.4.38
+   Compiling tar v0.4.40
+   Compiling cipher v0.4.4
+   Compiling rustls-webpki v0.102.4
+   Compiling h2 v0.3.26
+   Compiling near-primitives-core v0.31.1
+   Compiling url v2.5.0
+   Compiling Inflector v0.11.4
+   Compiling fs4 v0.6.6
+   Compiling bytesize v1.3.0
+   Compiling openssl-macros v0.1.1
+   Compiling tap v1.0.1
+   Compiling siphasher v0.3.11
+   Compiling native-tls v0.2.12
+   Compiling is_executable v0.1.2
+   Compiling atomic-waker v1.1.2
+   Compiling h2 v0.4.20
+   Compiling hyper v0.14.28
+   Compiling lzma-rs v0.3.0
+   Compiling wyz v0.5.1
+   Compiling opentelemetry v0.17.0
+   Compiling pbkdf2 v0.12.2
+   Compiling aes v0.8.4
+   Compiling tonic-build v0.6.2
+   Compiling near-primitives-core v0.20.1
+   Compiling sha1 v0.10.6
+   Compiling near-config-utils v0.31.1
+   Compiling zopfli v0.8.4
+   Compiling tokio-io-timeout v1.2.0
+   Compiling blake2 v0.10.6
+   Compiling crypto-mac v0.8.0
+   Compiling cipher v0.2.5
+   Compiling digest v0.9.0
+   Compiling async-stream-impl v0.3.5
+   Compiling funty v2.0.0
+   Compiling near-stdx v0.31.1
+   Compiling openssl-probe v0.1.5
+   Compiling near-sandbox-utils v0.15.1
+   Compiling either v1.19.0
+   Compiling itertools v0.12.1
+   Compiling near-crypto v0.31.1
+   Compiling blake2 v0.9.2
+   Compiling bitvec v1.0.1
+   Compiling tracing-subscriber v0.3.18
+   Compiling async-stream v0.3.5
+   Compiling c2-chacha v0.3.3
+   Compiling hyper-timeout v0.4.1
+   Compiling ureq v2.9.7
+   Compiling opentelemetry-otlp v0.10.0
+   Compiling tower v0.4.13
+   Compiling hyper v1.12.0
+   Compiling near-parameters v0.31.1
+   Compiling near-fmt v0.31.1
+   Compiling near_schemafy_core v0.7.0
+   Compiling tracing-futures v0.2.5
+   Compiling near-config-utils v0.20.1
+   Compiling near-time v0.31.1
+   Compiling uriparse v0.6.4
+   Compiling ordered-float v4.6.0
+   Compiling tokio-util v0.6.10
+   Compiling sync_wrapper v1.0.2
+   Compiling smart-default v0.7.1
+   Compiling socket2 v0.6.5
+   Compiling base64 v0.23.1
+   Compiling ipnet v2.9.0
+   Compiling clap_derive v4.6.7
+   Compiling hyper-util v0.1.21
+   Compiling binary-install v0.4.1
+   Compiling tonic v0.6.2
+   Compiling near-crypto v0.20.1
+   Compiling near-primitives v0.31.1
+   Compiling tower v0.5.3
+   Compiling near_schemafy_lib v0.7.0
+   Compiling near-abi v0.4.5
+   Compiling tokio-native-tls v0.3.1
+   Compiling http-body-util v0.1.5
+   Compiling actix-rt v2.9.0
+   Compiling actix_derive v0.6.1
+   Compiling actix-macros v0.2.4
+   Compiling fs2 v0.4.3
+   Compiling prettyplease v0.1.25
+   Compiling near-parameters v0.20.1
+   Compiling zeropool-bn v0.5.11
+   Compiling actix v0.13.3
+   Compiling tracing-opentelemetry v0.17.4
+   Compiling hyper-tls v0.6.0
+   Compiling prometheus v0.13.4
+   Compiling near-chain-configs v0.31.1
+   Compiling near-abi-client-impl v0.1.1
+   Compiling tower-http v0.6.11
+   Compiling clap v4.6.7
+   Compiling tracing-appender v0.2.3
+   Compiling near-fmt v0.20.1
+   Compiling opentelemetry-semantic-conventions v0.9.0
+   Compiling serde_urlencoded v0.7.1
+   Compiling near-rpc-error-core v0.20.1
+   Compiling ripemd v0.1.3
+   Compiling der v0.7.9
+   Compiling encoding_rs v0.8.34
+   Compiling mime v0.3.17
+   Compiling sec1 v0.7.3
+   Compiling near-vm-runner v0.20.1
+   Compiling reqwest v0.12.28
+   Compiling near-rpc-error-macro v0.20.1
+   Compiling near-o11y v0.20.1
+   Compiling near-abi-client-macros v0.1.1
+   Compiling near-jsonrpc-primitives v0.31.1
+   Compiling near-workspaces v0.21.0
+   Compiling reed-solomon-erasure v4.0.2
+   Compiling strum_macros v0.26.2
+   Compiling jsonptr v0.4.7
+   Compiling smart-default v0.6.0
+   Compiling crypto-bigint v0.5.5
+   Compiling convert_case v0.5.0
+   Compiling near-sdk-macros v5.1.0
+   Compiling elliptic-curve v0.13.8
+   Compiling near-abi-client v0.1.1
+   Compiling near-primitives v0.20.1
+   Compiling json-patch v2.0.0
+   Compiling near-jsonrpc-client v0.18.0
+   Compiling near-gas v0.3.7
+   Compiling rfc6979 v0.4.0
+   Compiling tokio-retry v0.3.0
+   Compiling near-token v0.2.0
+   Compiling near-gas v0.2.5
+   Compiling near-token v0.3.6
+   Compiling near-sdk v5.1.0
+   Compiling ecdsa v0.16.9
+   Compiling k256 v0.13.3
+   Compiling omnibounty-v3 v1.0.0 (/tmp/oa-xsuite2/contracts/near-v3)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3m 30s
+     Running tests/xsuite.rs (target/debug/deps/xsuite-cb1c1b38485cebe7)
+
+running 6 tests
+2026-11-13T19:09:50.458280Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:09:50.458957Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:09:50.458991Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:09:50.459007Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:09:50.459023Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:09:50.458143Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:09:50.459140Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:09:50.459170Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:09:50.459187Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:09:50.459203Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test full_lifecycle_qualify_finalize_callback ... ok
+2026-11-13T19:10:01.118020Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:01.118055Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:01.118077Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:01.118090Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:01.118104Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test identity_binding_rejects_impostors ... ok
+2026-11-13T19:10:02.076750Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:02.076785Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:02.076807Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:02.076821Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:02.076834Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test replay_duplicate_and_ordered_slots ... ok
+2026-11-13T19:10:12.148431Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:12.148516Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:12.149212Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:12.149234Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:12.149246Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test mpc_failures_release_for_retry ... ok
+2026-11-13T19:10:18.250023Z ERROR neard::cli: ERROR: failed to read parameter net.core.rmem_max from /proc/sys/net/core/rmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:18.250062Z ERROR neard::cli: ERROR: failed to read parameter net.core.wmem_max from /proc/sys/net/core/wmem_max: No such file or directory (os error 2)
+2026-11-13T19:10:18.250082Z ERROR neard::cli: ERROR: net.ipv4.tcp_rmem is set to 4096 131072 6291456, expected 4096 87380 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:18.250094Z ERROR neard::cli: ERROR: net.ipv4.tcp_wmem is set to 4096 16384 4194304, expected 4096 16384 8388608. Please run `scripts/set_kernel_params.sh`.
+2026-11-13T19:10:18.250107Z ERROR neard::cli: ERROR: net.ipv4.tcp_slow_start_after_idle is set to 1, expected 0. Please run `scripts/set_kernel_params.sh`.
+test same_evidence_reusable_across_bounties ... ok
+test window_storage_auth_and_gas_guards ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 40.80s
+

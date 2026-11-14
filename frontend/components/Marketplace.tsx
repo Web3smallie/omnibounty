@@ -13,6 +13,7 @@ import {
   bountyMatchesQuery,
   bountyTitle,
   formatDateTime,
+  isClaimableOpen,
   shortenAddress,
   timeAgo,
   v3EscrowCardState,
@@ -113,7 +114,7 @@ export default function Marketplace({ bounties }: { bounties: (BountyView | Boun
 
   const q = query.trim().toLowerCase();
   const visible = bounties
-    .filter((b) => (filter === "all" ? true : b.status === filter))
+    .filter((b) => (filter === "all" ? true : filter === "open" ? isClaimableOpen(b) : b.status === filter))
     .filter((b) => bountyMatchesQuery(b, q))
     .sort((a, b) => b.id - a.id);
 

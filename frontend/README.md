@@ -1,19 +1,19 @@
 # OmniBounty frontend
 
 Next.js marketplace for sponsors (create + fund bounties with USDC on Base
-Sepolia) and contributors (prove a merged PR with Reclaim zkTLS, track the
-MPC-signed voucher, watch the relayer settle the payout).
+Sepolia) and contributors (prove a merged PR with Reclaim zkTLS attestations,
+track the MPC-signed voucher, watch the relayer settle the payout).
 
-Base Sepolia is the only chain this app targets. Every bounty, voucher, and
-payout shown is read live from the NEAR contract or the Base escrow —
+The app targets NEAR testnet and Base Sepolia together. Every bounty, voucher,
+and payout shown is read live from the NEAR contract or the Base escrow —
 nothing is fabricated, simulated, or cached as fact.
 
 ## Configure
 
 ```sh
 cp .env.example .env.local
-# defaults already point at the V2 deployment:
-#   v2.omnibounty.testnet + 0xee5C…2C99 on Base Sepolia (84532)
+# defaults already point at the V3 deployment:
+#   omnibounty-v3.testnet + 0x63391c272A49c30f79eb6c3d8E10F0652Bb0F767 on Base Sepolia (84532)
 ```
 
 Only public endpoints/addresses use `NEXT_PUBLIC_*`. The Reclaim app secret
@@ -23,7 +23,7 @@ is server-side only (see below) and must never get a `NEXT_PUBLIC_` prefix.
 
 ```sh
 npm install
-npm test        # 30 unit tests, no network (validation + display + env)
+npm test        # 441 tests, offline (validation + display + wallets + settlement + more)
 npm run dev     # http://localhost:3000
 npm run build && npm start
 ```
@@ -31,65 +31,79 @@ npm run build && npm start
 ## User journeys
 
 **Sponsor** (`/bounties/new`): connect NEAR + EVM wallets → fill in bounty
-ID (or "Suggest next", derived from on-chain bounties), repo, PR number,
-reward in human USDC, optional deadline → live listing preview → preflight
-(contract state, ID uniqueness on both chains, USDC balance) → four
-on-chain steps (NEAR `create_bounty`, Base `createBounty`, USDC `approve`,
-`fundBounty`), each with its transaction hash and explorer link. Failures
-keep completed steps; "Resume" continues from the failed one.
+ID (or "Suggest next", derived from on-chain bounties) and criteria —
+simple mode (title, description, repo, issue, slots, deadline, challenge
+window, merge policy) or advanced raw criteria JSON → live listing
+preview → preflight (contract state, ID uniqueness on both chains, USDC
+balance) → five on-chain steps (NEAR `create_bounty`, Base
+`createBounty`, USDC `approve`, `fundBounty`, NEAR `mark_funded`), each
+with its transaction hash and explorer link. Failures keep completed
+steps; "Resume" continues from the failed one.
 
 **Contributor** (`/bounties/[id]`): browse the marketplace → open a bounty →
-paste the Reclaim proof → the app shows what the proof claims
-(merged/author/repo/number) and flags mismatches → dry-run against the
-contract (free) → submit `claim` from the NEAR wallet → watch the
+paste the two Reclaim attestations (PR + identity) → Analyze shows the PR
+facts (merged/author/repo/number/head) and verifies the identity binding,
+flagging mismatches → dry-run against the contract (free) → submit
+`qualify_claim` from the NEAR wallet (1 NEAR deposit + gas) → watch the
 MPC-signed voucher arrive → watch the relayer settle it → payout panel
 links the real USDC transaction on Base Sepolia. Pending, settled, and
 failed states are all explicit; nothing is shown as paid until the escrow
 `VoucherClaimed` log exists.
 
-The on-chain template stores repo, PR number, amount, and deadline — the
-marketplace title (`repo#number`) and criteria line are derived from those
-fields, never from free text.
+V3 bounties render as `Bounty #<id>` with the criteria hash and slot counts;
+the canonical criteria document is served from `public/criteria/<hash>.json`.
+(V1 records keep their legacy `repo#number` rendering where encountered.)
 
 ## Generating proofs
 
-Proofs must extract `merged`, `author`, `repo`, and `number` for the PR, or
-the contract rejects them. Generate server-side (the app secret never leaves
-your machine). Set the credentials per command:
+The V3 claim needs two attestations from the SAME Reclaim app (the proof
+owner derives from the app secret, and every owner must equal the payout
+recipient). Generate server-side (secrets never leave your machine):
 
 ```sh
-RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... npm run prove -- octocat/Hello-World 7 ./proof.json
+RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... npm run prove -- octocat/Hello-World 7 ./proof-pr.json
+RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... GITHUB_TOKEN=<your-own-token> node scripts/prove_identity.mjs ./proof-identity.json
 ```
 
-or persist them on this machine only in `frontend/.env.local` (gitignored,
-loaded automatically by the script; shell variables take precedence):
+or persist credentials on this machine only in `frontend/.env.local`
+(gitignored, loaded automatically by both scripts; shell variables take
+precedence):
 
 ```sh
 RECLAIM_APP_ID=0x...
 RECLAIM_APP_SECRET=0x...
+GITHUB_TOKEN=<your-own-token>
 ```
 
 Never prefix these with `NEXT_PUBLIC_` — that would embed them in the
-browser bundle.
+browser bundle. The GitHub token travels only inside the private TLS
+session: it never enters the signed parameters, the proof files, or the
+chain.
 
-The script fails fast if the extraction does not satisfy the on-chain
-predicate (e.g. the PR is not merged). Paste the resulting JSON into the
-claim form. Payout always goes to the proof owner — frontrunners cannot
-redirect funds.
+Each script fails fast unless its extractions satisfy the on-chain template
+(7 mandated PR fields; login + numeric id for identity). Paste both JSON
+files into the claim form. Payout always goes to the proof owner —
+frontrunners cannot redirect funds.
 
 ## Layout
 
 - `app/` — routes: marketplace home, sponsor page, bounty detail (NEAR data
-  server-rendered, Base state read live in the browser).
-- `components/` — wallet context (NEAR + EVM with Base Sepolia switching),
-  marketplace grid, sponsor/claim flows, settlement tracker.
-- `lib/near.ts`, `lib/base.ts` — contract access; `lib/validation.mjs` +
-  `lib/display.mjs` + `lib/settlement.mjs` — pure, dependency-free helpers shared with the tests.
+  server-rendered, Base state read live in the browser), error boundaries.
+- `components/` — wallet context (NEAR Wallet Selector + EVM with Base
+  Sepolia switching), marketplace grid, `SponsorFormV3`/`ClaimFormV3`,
+  settlement tracker, escrow/criteria panels.
+- `lib/` — `near.ts`/`base.ts` contract access; DOM-free `*.mjs` helpers
+  (`validation`, `display`, `settlement`, `reclaim`, `criteria`,
+  `sponsorV3`, `evmWallet`, `walletInit`, `settlePoll`, `txConfirm`,
+  `relayerStatus`, `errorRecovery`) shared with the tests.
+- `scripts/` — `prove.mjs`, `prove_identity.mjs`, `load_env.mjs`.
+- `public/criteria/` — served criteria artifacts, named by canonical hash.
+- `test/` — 441 `node:test` assertions mirroring the lib modules.
 
 ## V3 demo flow (3-minute judging)
 
 V3 bounties render automatically when the on-chain view carries
-`criteria_hash` (V1 rendering is unchanged). The V3 journey is one submit:
+`criteria_hash`. The V3 journey is one submit:
 
 1. Generate both proofs with the SAME Reclaim app secret (the proof owner
    derives from it, and every proof owner must equal the payout recipient):
@@ -109,5 +123,6 @@ V3 bounties render automatically when the on-chain view carries
    `challenge_window_sec: "0"`), and "paid" appears only after the Base
    escrow confirms the payout. See `../docs/v3/FINALIZATION.md`.
 
-Point the app at V3 with `NEXT_PUBLIC_CONTRACT_ID=omnibounty-v3.testnet`
-(plus the V3 escrow address) in `.env.local`.
+V3 is the default target (see `.env.example`); override
+`NEXT_PUBLIC_CONTRACT_ID`/`NEXT_PUBLIC_ESCROW_ADDRESS` in `.env.local`
+only to inspect historical V1/V2 records.

@@ -267,6 +267,24 @@ export function bountyCardSlotsText(bounty) {
   return `${n} slot${n === 1 ? "" : "s"} (${filled} claimed)`;
 }
 
+/// Whether a bounty is claimable right now ("open" in marketplace
+/// vocabulary). V1 keeps its contract status (`open` means awaiting a
+/// claim); V3's contract status means something else (`open` = created
+/// but UNFUNDED), so claimability is derived instead: funded, unexpired,
+/// with at least one unfilled slot. Malformed records fail closed
+/// (false). Shared by the header count and the Open filter so the two
+/// always agree. Pure.
+export function isClaimableOpen(bounty) {
+  if (!bounty || typeof bounty !== "object") return false;
+  if (!isBountyV3(bounty)) return bounty.status === "open";
+  if (bounty.funded !== true) return false;
+  if (bounty.status === "expired") return false;
+  if (!Array.isArray(bounty.slots) || bounty.slots.length === 0) return false;
+  const filled = bounty.slots_filled ?? 0;
+  if (!Number.isInteger(filled) || filled < 0) return false;
+  return filled < bounty.slots.length;
+}
+
 /// Marketplace card state from a V2 escrow bounty struct: V1-shaped
 /// `{ token, amount, sponsor, funded, claimed }` with real fields
 /// (`amount` is the schedule total) so V3 cards render through the same

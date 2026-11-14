@@ -1,0 +1,18 @@
+{
+  "voucher": {
+    "bounty_id": 414201122891941,
+    "slot_index": 0,
+    "recipient": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+    "amount": "1000000",
+    "nonce": 7,
+    "expiry": 1794752415,
+    "chain_id": 84532,
+    "escrow": "0x63391c272a49c30f79eb6c3d8e10f0652bb0f767",
+    "criteria_hash": "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+    "digest": "0x15a3e5ec9186954161a396777885d803a8035b08ecab8da5e42f312c790dc7e0"
+  },
+  "v": 27,
+  "r": "0x76b8f9a12efb022206365890a0b9ecc1eda208b058befcf472d034af9951a213",
+  "s": "0x7e94151161fce1a06157bd4a68ba8035b4400b705d386447cfc56d9a7f3fdd67"
+}
