@@ -9,6 +9,7 @@ import { config } from "../lib/config";
 import { useWallets } from "./wallets";
 import { ExtLink, LoadingDots } from "./ui";
 import CriteriaPanel from "./CriteriaPanel";
+import ClaimPrepWizard from "./ClaimPrepWizard";
 import SettlementPanel from "./SettlementPanel";
 import ErrorBoundary from "./ErrorBoundary";
 import { nearTxUrl, shortenAddress } from "../lib/display.mjs";
@@ -236,23 +237,34 @@ export default function ClaimFormV3({
 
       <CriteriaPanel bountyId={bountyId} criteriaHash={criteriaHash} onVerified={setVerifiedCriteria} />
 
-      <label className="field">
-        Claim bundle JSON
-        {verifiedCriteria ? (
-          <span className="hint">
-            Verified criteria will be attached automatically — your bundle only needs{" "}
-            <code>proofs</code>.
-          </span>
-        ) : null}
-        <textarea
-          value={bundleText}
-          onChange={(e) => setBundleText(e.target.value)}
-          placeholder='{"criteria_json": …, "proofs": [{"tag": "pr", "proof": …}]}'
-          spellCheck={false}
-          aria-invalid={errors.length > 0}
-          aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
-        />
-      </label>
+      <ClaimPrepWizard
+        verifiedCriteria={verifiedCriteria}
+        onBundleReady={(text, owner) => {
+          setBundleText(text);
+          setRecipient(owner);
+        }}
+      />
+
+      <details className="help">
+        <summary>Advanced: paste a full bundle manually</summary>
+        <label className="field">
+          Claim bundle JSON
+          {verifiedCriteria ? (
+            <span className="hint">
+              Verified criteria will be attached automatically — your bundle only needs{" "}
+              <code>proofs</code>.
+            </span>
+          ) : null}
+          <textarea
+            value={bundleText}
+            onChange={(e) => setBundleText(e.target.value)}
+            placeholder='{"criteria_json": …, "proofs": [{"tag": "pr", "proof": …}]}'
+            spellCheck={false}
+            aria-invalid={errors.length > 0}
+            aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
+          />
+        </label>
+      </details>
       <label className="field">
         Payout recipient
         <span className="hint">Must equal the proof owner below — frontrunners cannot redirect funds.</span>

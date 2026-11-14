@@ -58,12 +58,17 @@ the canonical criteria document is served from `public/criteria/<hash>.json`.
 
 The V3 claim needs two attestations from the SAME Reclaim app (the proof
 owner derives from the app secret, and every owner must equal the payout
-recipient). Generate server-side (secrets never leave your machine):
+recipient). Generate server-side (secrets never leave your machine) with
+one command:
 
 ```sh
-RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... npm run prove -- octocat/Hello-World 7 ./proof-pr.json
-RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... GITHUB_TOKEN=<your-own-token> node scripts/prove_identity.mjs ./proof-identity.json
+RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... GITHUB_TOKEN=<your-own-token> npm run prove:bundle -- octocat/Hello-World 7 ./claim-proofs.json
 ```
+
+Then open the bounty and click **Prepare claim**: paste the one file, each
+proof is validated immediately, and the claim bundle is assembled for you.
+(The single-proof scripts `prove.mjs` / `prove_identity.mjs` still work for
+advanced use; the wizard accepts their outputs too.)
 
 or persist credentials on this machine only in `frontend/.env.local`
 (gitignored, loaded automatically by both scripts; shell variables take
@@ -96,9 +101,9 @@ frontrunners cannot redirect funds.
   (`validation`, `display`, `settlement`, `reclaim`, `criteria`,
   `sponsorV3`, `evmWallet`, `walletInit`, `settlePoll`, `txConfirm`,
   `relayerStatus`, `errorRecovery`) shared with the tests.
-- `scripts/` — `prove.mjs`, `prove_identity.mjs`, `load_env.mjs`.
+- `scripts/` — `prove_bundle.mjs` (one-command both proofs), `prove.mjs`, `prove_identity.mjs`, `load_env.mjs`.
 - `public/criteria/` — served criteria artifacts, named by canonical hash.
-- `test/` — 441 `node:test` assertions mirroring the lib modules.
+- `test/` — 491 `node:test` assertions mirroring the lib modules.
 
 ## V3 demo flow (3-minute judging)
 
@@ -107,13 +112,12 @@ V3 bounties render automatically when the on-chain view carries
 
 1. Generate both proofs with the SAME Reclaim app secret (the proof owner
    derives from it, and every proof owner must equal the payout recipient):
-   `node scripts/prove.mjs <owner/repo> <pr> ./proof-pr.json` (7 mandated
-   PR extractions) and `GITHUB_TOKEN=<your-own-token> node
-   scripts/prove_identity.mjs ./proof-identity.json` (your login + numeric
-   id; the token stays on your machine and never enters the proof).
-2. Paste the claim bundle (`{ criteria_json, proofs }` with
-   `{ evidence_type: 1, proof }` + `{ evidence_type: 7, proof }` entries) —
-   Analyze shows the PR facts and verifies the identity binding.
+   `node scripts/prove_bundle.mjs <owner/repo> <pr> ./claim-proofs.json`
+   (7 mandated PR extractions plus your login + numeric id; secrets stay on
+   your machine and never enter the proof).
+2. Open the bounty and click **Prepare claim**: paste the one file, watch
+   each proof validate, and let the wizard assemble the bundle — Analyze
+   then shows the PR facts and verifies the identity binding.
 3. Submit once from the NEAR wallet (1 NEAR deposit + gas): the form first
    runs the read-only `dry_qualify` preflight with the exact same arguments
    and only opens the wallet approval when the contract reports success.

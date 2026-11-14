@@ -484,12 +484,17 @@ Transaction steps (terminal-native; each prints its tx hash):
     ```
 7. **Claim preparation** — live proofs need a merged PR by the claimant
     plus `RECLAIM_APP_ID/RECLAIM_APP_SECRET` (same pair for both) and the
-    claimant's own `GITHUB_TOKEN`:
+    claimant's own `GITHUB_TOKEN`. One command mints both attestations,
+    checks the authorship binding, and writes one file:
     ```sh
     cd frontend
-    RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... node scripts/prove.mjs <owner/name> <pr> ./proof-pr.json
-    RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... GITHUB_TOKEN=ghp_... node scripts/prove_identity.mjs ./proof-identity.json
+    RECLAIM_APP_ID=0x... RECLAIM_APP_SECRET=0x... GITHUB_TOKEN=ghp_... \
+      node scripts/prove_bundle.mjs <owner/name> <pr> ./claim-proofs.json
     ```
+    Then open the bounty in the frontend, click **Prepare claim**, and paste
+    that one file: each proof is validated on the spot and the claim bundle
+    is assembled automatically. (The single-proof scripts `prove.mjs` /
+    `prove_identity.mjs` still work; the wizard accepts their outputs too.)
     > **GitHub token safety.** Never request or use another person's real
     > GitHub token, and never commit or log a token (these examples show
     > placeholders only). A live Reclaim proof requires a
@@ -610,7 +615,7 @@ node tools/qualify_claim.mjs evidence/e2e-run5/proofs4 414201122891941 \
 # (Actual output captured live 2026-11-14; also stored in proofs/dry-result.json.)
 ```
 
-**Live vs recorded, unmistakable.** Live = `prove.mjs`/`prove_identity.mjs`
+**Live vs recorded, unmistakable.** Live = `prove_bundle.mjs`
 output with your session's timestamps, verified by `dry_qualify ok:true`
 on an open slot. Recorded = any file above: good for shape validation,
 crypto-path checks, dry-run plumbing, and replay-demonstration; NEVER a
