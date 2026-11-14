@@ -757,6 +757,14 @@ forge, R = relayer, T = tools, F = frontend.
    account) plus its EVM gas key. Impact: key-compromise blast radius
    covers gas spend and permissionless finalizes only — never vouchers
    or funds — but both holdings deserve rotation hygiene.
+10. **Contributor claim preparation is terminal-based.** Contributors
+    generate both Reclaim proofs (PR evidence and GitHub identity) locally
+    with their own Reclaim credentials and a GitHub token, using
+    `frontend/scripts/prove_bundle.mjs`; the claim wizard then guides them
+    through Analyze and Submit. A shared server-side Reclaim secret cannot
+    replace this: it would give every contributor the same proof owner, and
+    the deployed contract requires each proof owner to equal the payout
+    recipient. Contracts are unchanged for this submission.
 
 ---
 

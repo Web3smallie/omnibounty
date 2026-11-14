@@ -343,6 +343,7 @@ implemented:
 4. Structured dispute and review workflows.
 5. Production readiness: independent security audit, stronger administration, operational resilience and monitoring.
 6. Evaluating additional networks after stabilizing the existing cross-chain flow.
+7. A browser-native contributor claim flow (for example, Reclaim's wallet/request flow), which must keep per-contributor proof ownership and GitHub identity binding. Under investigation; not verified against the deployed contract.
 
 ## Documentation index
 
@@ -380,6 +381,14 @@ implemented:
   eliminated.
 - **External dependencies:** GitHub API shape, Reclaim attestor
   availability, NEAR/Base RPC liveness, USDC contract behavior.
+- **Contributor claim preparation is terminal-based.** Contributors
+  generate both Reclaim proofs (PR evidence and GitHub identity) locally
+  with their own Reclaim credentials and a GitHub token, using
+  `frontend/scripts/prove_bundle.mjs`; the claim wizard then guides them
+  through Analyze and Submit. A shared server-side Reclaim secret cannot
+  replace this: it would give every contributor the same proof owner, and
+  the deployed contract requires each proof owner to equal the payout
+  recipient. Contracts are unchanged for this submission.
 
 Full catalog with impacts: `JUDGES.md` §12 and
 `docs/v3/SECURITY_MODEL.md`.
