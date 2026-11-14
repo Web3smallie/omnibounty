@@ -40,3 +40,6 @@ audit-backup-20261113/deploy-corrected.mjs (hash-gated, single DeployContract).
   mpcSigner 0x4b20...A2f9, USDC 6 decimals, escrow 0 / recipient +1000000.
 - No Base redeployment necessary: voucher format, digest, chain/escrow
   constants, and units are identical (voucher.rs untouched; config unchanged).
+- Escrow deployer: 0x7b8726add6b17a99bdcb938060a9f40e86dc12a5 (creation tx
+  0xa31a1e31d1ddeb3082797e0bf9cfe40b8e1e3d725746caebcf2ea7ec5a7dc192,
+  block 58198989); also the current owner() and the configured relayer wallet.
