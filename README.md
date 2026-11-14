@@ -11,10 +11,12 @@ Sepolia, testnet USDC only — not mainnet production infrastructure.)
 
 > **Status.** The system works end to end on public testnets. The latest
 > completed demonstration is **Run 5** (2026-11-14): a fresh bounty went
-> from creation to 1-USDC settlement with separate deployer, sponsor, and
-> contributor wallets operated by the project team. The demo was
-> self-funded and self-claimed by the same operator and does not
-> demonstrate independent sponsor–contributor participation. Demo
+> from creation to 1-USDC settlement with distinct sponsor and
+> contributor wallets on both chains — a separate deployer, a sponsor
+> with its own NEAR account and Base wallet, and a contributor with a
+> different NEAR account and Base wallet. All three roles were operated
+> by the project team: the demo was self-funded and self-claimed and
+> does not demonstrate independent sponsor–contributor participation. Demo
 > criteria verify a merged PR and GitHub identity, not that the code
 > solves a task. Evidence: `evidence/e2e-run5/E2E-RUN5.md`.
 
@@ -276,8 +278,10 @@ Explorers: [NEAR contract](https://testnet.nearblocks.io/address/omnibounty-v3.t
 ## Run 5 evidence
 
 Run 5 (2026-11-14) took bounty `414201122891941` from creation to
-settlement: fresh NEAR sponsor (`run5sponsor.testnet`) and contributor
-(`run5contributor.testnet`) wallets, fresh merged PR #2, fresh Reclaim
+settlement with distinct sponsor and contributor wallets on both chains
+(fresh NEAR accounts `run5sponsor.testnet` and `run5contributor.testnet`;
+separate Base wallets for sponsor and recipient) and a separate deployer,
+plus fresh merged PR #2, fresh Reclaim
 sessions (new PR identifier `0x4555…`), NEAR claim, MPC-signed voucher
 (nonce 7, digest `0x15a3…dc7e0`), and 1-USDC settlement by the deployed
 Render relayer ([payout tx](https://sepolia.basescan.org/tx/0x3f171afb6649b3d0432bd4eaabdb90ede5fd2e871248a6153b89edc5024037e1),

@@ -46,7 +46,7 @@ Commands:
 ```sh
 curl -s -X POST https://rpc.testnet.near.org -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":"j","method":"query","params":{"request_type":"view_code",
-       "finality":"final","account_id":"omnibounty-v3.testnet"}}}' -o /tmp/ob-code.json
+       "finality":"final","account_id":"omnibounty-v3.testnet"}}' -o /tmp/ob-code.json
 python3 -c 'import json,hashlib,base64; c=base64.b64decode(json.load(open("/tmp/ob-code.json"))["result"]["code_base64"]); print(len(c), hashlib.sha256(c).hexdigest())'
 ```
 

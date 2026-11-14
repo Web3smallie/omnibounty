@@ -8,10 +8,15 @@ Sepolia TESTNET units (6 decimals), not mainnet funds.
 
 ## Wallets (all separation verified on-chain)
 
-Separate wallets operated by the project team — the demo was self-funded
-and self-claimed by the same operator (GitHub: Web3smallie) and does not
-demonstrate independent sponsor–contributor participation. Who did what is
-traceable per transaction below; account pages:
+Run 5 used different sponsor and contributor wallets on both NEAR and
+Base Sepolia: the deployer was separate; the sponsor used its own NEAR
+account and Base wallet; the contributor used a different NEAR account
+and Base wallet — sponsor and contributor wallets were distinct across
+both chains, as the addresses below show. Separately, the wallets were
+controlled by the project team, so the demo was self-funded and
+self-claimed (GitHub: Web3smallie) and does not demonstrate independent
+sponsor–contributor participation. Who did what is traceable per
+transaction below; account pages:
 
 - NEAR deployer/operator: omnibounty-v3.testnet (contract account,
   self-deployed).
