@@ -1,0 +1,8 @@
+{
+  "name": "omnibounty",
+  "private": true,
+  "description": "OmniBounty cross-chain bounties (NEAR + Base Sepolia). Root entry points only; per-package code lives in contracts/, frontend/, relayer/, tools/, integration/.",
+  "scripts": {
+    "e2e:local": "node integration/scripts/e2e-local.mjs"
+  }
+}

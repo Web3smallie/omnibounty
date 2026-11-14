@@ -3015,19 +3015,27 @@ mod tests {
 
     /// Regen the cross-chain e2e fixture: REAL NEAR-produced claims and
     /// vouchers (test MPC key) serialized exactly as the views emit them,
-    /// for the Anvil e2e harness (`relayer/test/e2e-v3-anvil.mjs`).
+    /// for the Hardhat e2e harness (`integration/scripts/e2e-v3-run.mjs`).
     /// `E2E_ESCROW_ADDRESS` / `E2E_TOKEN_ADDRESS` / `E2E_CHAIN_ID` /
-    /// `E2E_OUT_PATH` override the standalone defaults. Proofs use the
-    /// current wall-clock time, so regenerate immediately before e2e runs:
-    /// `cargo test regen_e2e_fixture -- --ignored --nocapture`.
+    /// `E2E_OUT_PATH` override the standalone defaults.
+    ///
+    /// Deterministic test clock: `E2E_FIXTURE_TIME` pins the fixture epoch
+    /// (all deadlines, expiries, proofs, and nonces derive from it), making
+    /// regen byte-reproducible — same inputs, same file, verifiable with
+    /// `cmp`. Unset, it defaults to wall-clock time, so the standard flow
+    /// (`npm run e2e:local`, which regens immediately before running) can
+    /// never go stale: `cargo test regen_e2e_fixture -- --ignored --nocapture`.
     #[test]
     #[ignore]
     fn regen_e2e_fixture() {
         use std::time::{SystemTime, UNIX_EPOCH};
-        let now = SystemTime::now()
-            .duration_since(UNIX_EPOCH)
-            .unwrap()
-            .as_secs();
+        let now: u64 = match std::env::var("E2E_FIXTURE_TIME") {
+            Ok(s) => s.parse().expect("E2E_FIXTURE_TIME must be unix seconds"),
+            Err(_) => SystemTime::now()
+                .duration_since(UNIX_EPOCH)
+                .unwrap()
+                .as_secs(),
+        };
         let nanos = now * 1_000_000_000;
         let escrow_env = std::env::var("E2E_ESCROW_ADDRESS")
             .unwrap_or_else(|_| "0xee5C8F3154fed8B9B2f5D820AC687fDfa8CF2C99".to_string());

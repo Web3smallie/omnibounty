@@ -70,21 +70,38 @@ export async function deploySuite(deployer, mpcSigner) {
   return { token: await usdc.getAddress(), escrow: await escrow.getAddress() };
 }
 
+export const FIXTURE_FRESHNESS_SEC = 3600;
+
 export function loadFixture() {
-  const p = join(ROOT, "testdata", "v3", "e2e-vouchers.json");
+  // E2E_FIXTURE_PATH lets the orchestrator run from a freshly regenerated
+  // file; the tracked default keeps standalone `npm run e2e` working.
+  const p = process.env.E2E_FIXTURE_PATH ?? join(ROOT, "testdata", "v3", "e2e-vouchers.json");
   let fx;
   try {
     fx = JSON.parse(readFileSync(p, "utf8"));
   } catch (e) {
     throw new Error(`cannot read e2e fixture at ${p} (${e.message}); run e2e:prepare, then the regen command it prints`);
   }
+  // Structural guards only — no wall clock. Time validity is enforced
+  // against the fixture's own recorded epoch by assertChainSane below, so
+  // a fixture can never silently rot: it either matches this chain or the
+  // run fails fast with regen instructions.
+  assert.ok(
+    Number.isInteger(fx.generated_at) && fx.generated_at > 0,
+    "fixture missing generated_at; regenerate it via e2e:prepare"
+  );
+  assert.ok(Array.isArray(fx.claims) && fx.claims.length > 0, "fixture has no claims");
   for (const c of fx.claims) {
-    if (BigInt(c.voucher.voucher.expiry) <= BigInt(Math.floor(Date.now() / 1000) + 300)) {
-      throw new Error(
-        `e2e fixture is stale (slot ${c.slot} voucher expires within 5 min); regenerate it via e2e:prepare`
-      );
-    }
+    assert.ok(
+      BigInt(c.voucher.voucher.expiry) > BigInt(fx.generated_at),
+      `fixture slot ${c.slot} voucher expires at or before its own epoch; regenerate it via e2e:prepare`
+    );
   }
+  assert.ok(
+    BigInt(fx.bounty.deadline) > BigInt(fx.generated_at),
+    "fixture deadline is at or before its own epoch; regenerate it via e2e:prepare"
+  );
+  fx.fixturePath = p;
   return fx;
 }
 
@@ -95,9 +112,16 @@ export async function assertChainSane(provider, fx) {
     BigInt(fx.config.chainId),
     `chain mismatch: network ${net.chainId} vs fixture ${fx.config.chainId}`
   );
+  // Deterministic test clock: the fixture epoch is the single time root.
+  // The fresh chain must start within one deadline-window of it; anything
+  // older means a stale fixture, not a broken test.
   const block = await provider.getBlock("latest");
-  const drift = Math.abs(Number(block.timestamp) - Math.floor(Date.now() / 1000));
-  assert.ok(drift < 3600, `chain clock drift ${drift}s too large; fixture timestamps would be meaningless`);
+  const skew = Math.abs(Number(block.timestamp) - fx.generated_at);
+  assert.ok(
+    skew < FIXTURE_FRESHNESS_SEC,
+    `fixture is stale (chain starts ${skew}s after its epoch, limit ${FIXTURE_FRESHNESS_SEC}s); ` +
+      `re-run via the single-command flow (npm run e2e:local), which regenerates first`
+  );
 }
 
 export { Relayer, ESCROW_ABI_V2, StateStore };
@@ -118,6 +142,7 @@ export function newTrace(fx) {
       relayer: "live (real Relayer class)",
     },
     fixtureGeneratedAt: fx.generated_at,
+    fixturePath: fx.fixturePath ?? null,
     scenarios: [],
   };
 }

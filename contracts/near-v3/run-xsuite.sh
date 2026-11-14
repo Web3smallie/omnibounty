@@ -6,6 +6,8 @@
 # Prerequisites (checked below, install once per machine):
 #   rustup toolchain install stable 1.86.0 --target wasm32-unknown-unknown
 #   python3 (canonicalizer)
+# The sandbox binary is provisioned below (verified download, cached in
+# ~/.cache/omnibounty); no manual install needed.
 set -euo pipefail
 cd "$(dirname "$0")"
 # Loopback RPC must bypass any sandbox proxy (see tests/README.md).
@@ -17,6 +19,9 @@ rustup toolchain list 2>/dev/null | grep -q "1.86.0" || {
 rustup target list --toolchain 1.86.0 --installed 2>/dev/null | grep -q "wasm32-unknown-unknown" || {
   echo "missing wasm32 target on 1.86.0 (run the rustup line above)"; exit 1; }
 command -v python3 >/dev/null || { echo "missing python3"; exit 1; }
+command -v curl >/dev/null || { echo "missing curl (needed for the verified sandbox download)"; exit 1; }
+echo "==> ensure sandbox binary (verified, cached)"
+export NEAR_SANDBOX_BIN_PATH="$(bash ../../scripts/ensure-near-sandbox.sh)"
 
 echo "==> unit tests"
 cargo test --locked --lib

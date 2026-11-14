@@ -178,12 +178,8 @@ cd relayer && npm ci && npm test            # 87 passed
 cd ../tools && npm ci && npm test           # 37 passed
 cd ../frontend && npm ci && npm test        # 440 passed
 cd ../frontend && npm run build             # production build, 4 routes
-cd ../integration && npm ci
-npx hardhat run --no-compile scripts/e2e-v3-prepare.mjs   # prints E2E_* env
-# then, from contracts/near-v3 (see prepare output):
-E2E_ESCROW_ADDRESS=0x... E2E_TOKEN_ADDRESS=0x... E2E_CHAIN_ID=84532 \
-  cargo +stable test --locked --lib regen_e2e_fixture -- --ignored --nocapture --exact tests::regen_e2e_fixture
-cd ../integration && npx hardhat run --no-compile scripts/e2e-v3-run.mjs  # 7 scenarios pass
+cd ../integration && npm ci && cd ..
+npm run e2e:local                              # 7/7 local E2E scenarios pass (see §7b)
 ```
 
 Legacy NEAR unit suite (historical implementation; note the `+stable`
@@ -193,11 +189,12 @@ override — its lockfile also needs rustc ≥ 1.88):
 cd contracts/near && cargo +stable test --locked --lib   # 44 passed
 ```
 
-Legacy cross-contract suite (`contracts/near`: build both WASMs, then
-`cargo +stable test --locked --features xsuite --test cross_contract`)
-was attempted but its `near-workspaces 0.21` build script fails on modern
-toolchains — documented here as not verified, not as passing. All counts
-above come from runs performed 2026-11-14 unless noted.
+Legacy cross-contract suite (`contracts/near`: build both WASMs with
+1.86, canonicalize each with `tools/canon_leb.py` — mandatory, same
+`PrepareError(Deserialization)` failure as V3 without it — then
+`cargo +stable test --locked --features xsuite --test cross_contract`
+with `NEAR_SANDBOX_BIN_PATH` exported): 2 passed. All counts above come
+from runs performed 2026-11-14 unless noted.
 
 ## Part B — Terminal-only AI agent runbook
 
@@ -209,20 +206,28 @@ git clone https://github.com/Web3smallie/omnibounty omnibounty && cd omnibounty
 ```
 
 `scripts/setup.sh` is the canonical path: it checks for Linux + `curl git
-python3 node(≥22) npm`, installs the Rust toolchains (`stable`, `1.86.0`,
-`wasm32-unknown-unknown` target, `rustfmt`/`clippy`), installs Foundry,
-runs `npm ci` in `frontend relayer tools integration`, vendors legacy
-`forge-std`, builds the escrow artifacts the relayer tests read,
-generates disposable identities (§6), and smoke-checks both RPC endpoints.
-It sends no transactions and is safe to re-run. It needs a network
-connection (toolchain + package downloads) and a pre-installed Node ≥ 22
-(Ubuntu: `sudo apt-get install -y curl git python3 build-essential
-pkg-config libudev-dev`, then Node via nvm or nodejs.org).
+python3 node(≥22) npm cc pkg-config`, installs rustup itself when missing,
+then the Rust toolchains (`stable`, `1.86.0`, `wasm32-unknown-unknown`
+target, `rustfmt`/`clippy`), installs Foundry, provisions the verified
+NEAR sandbox binary, runs `npm ci` in `frontend relayer tools
+integration`, vendors legacy `forge-std`, builds the escrow artifacts the
+relayer tests read, generates disposable identities (§6), and smoke-checks
+both RPC endpoints. It sends no transactions and is safe to re-run
+(completed steps are skipped). It needs a network connection (toolchain +
+package downloads) and pre-installed system packages + Node ≥ 22 (Ubuntu:
+`sudo apt-get install -y curl git python3 build-essential pkg-config
+libudev-dev`, then Node via nvm or nodejs.org). If a fresh shell cannot
+find `cargo`/`forge` afterwards, export
+`PATH="$HOME/.cargo/bin:$HOME/.foundry/bin:$PATH"` (also printed by the
+script).
 
-Honest scope note: `setup.sh` was assembled from individually verified
-steps but has NOT been validated with a from-scratch container run (no
-container runtime was available), so treat the first clean-machine run as
-a beta and report gaps. Every step it performs was verified in isolation.
+Validation note: `setup.sh` was validated end to end from a clean HOME +
+fresh public clone on 2026-11-14 (rustup, both Rust toolchains, Foundry,
+npm packages, and the sandbox binary all installed from scratch, then the
+full rebuild + verification suite ran green). No container runtime was
+available, so validation used a clean-home/fresh-clone simulation on
+shared system packages rather than a from-scratch container; the one step
+this cannot cover is `apt-get` itself.
 
 ### 5. Environment variables
 
@@ -349,6 +354,35 @@ for documentation is out of bounds), so the live E2E is
 terminal-complete but live-unretested end to end. No step needs a wallet
 popup, a browser, or GUI interaction; the one human dependency is funding
 (§6) plus, for live proofs, GitHub/Reclaim credentials (§7–8).
+
+### 7b. Local E2E in one command (no funds, no wallets)
+
+`npm run e2e:local` (from the repo root) executes the complete LOCAL
+cross-chain lifecycle — real escrow bytecode on an in-process chain, real
+relayer class, real Rust-produced vouchers — and prints a verified report.
+It sends no live transactions and needs no funds or credentials.
+
+Prerequisites: Node ≥ 22, `node_modules` in `integration/` and `relayer/`
+(`npm ci` in each), Foundry (`forge`), and Rust with `cargo +stable` (for
+fixture regen; `scripts/setup.sh` installs everything). Missing tools fail
+fast with install instructions — nothing is skipped silently.
+
+What it runs, in order: prerequisite checks → `forge build` (escrow
+artifacts) → `e2e:prepare` (deterministic addresses) → fixture regen
+(fresh deterministic clock) → scenarios A–F → trace-parsed report with
+per-scenario PASS/FAIL and exit code. `npm run e2e:local -- --no-regen`
+reuses the previous run's fixture instead of regenerating (fails fast if
+it is missing or stale). `E2E_FIXTURE_TIME` pins the regen epoch for
+byte-reproducible fixtures; `E2E_FIXTURE_PATH` overrides which fixture a
+run reads. Expected result: `7/7 pass` plus `E2E LOCAL: ALL GREEN`, with
+an explicit LOCAL-SIMULATION banner — this never represents live
+testnet settlement (see §7 vs §8 and `integration/README.md`).
+
+Troubleshooting: stale-fixture errors mean the fixture predates the run —
+re-run without `--no-regen`. Address-drift errors mean deploy order
+changed — re-run (prepare runs first, so this self-heals). RPC/compile
+failures stream the full command output, then fail naming the step; fix
+the prerequisite and re-run — every step is idempotent.
 
 ### 8. Recorded-proof fallback
 

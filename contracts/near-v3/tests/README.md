@@ -79,10 +79,22 @@ export NO_PROXY=127.0.0.1,localhost no_proxy=127.0.0.1,localhost
 
 ## One command
 
-`../run-xsuite.sh` runs everything in order and fails fast: unit tests,
-fixture regen, both 1.86 WASM builds, canonicalize + `--check`, then the
-sandbox suite (with the loopback bypass). Same steps as above, nothing
-skipped.
+`../run-xsuite.sh` runs everything in order and fails fast: sandbox-binary
+provisioning (verified download, cached), unit tests, fixture regen, both
+1.86 WASM builds, canonicalize + `--check`, then the sandbox suite (with
+the loopback bypass). Same steps as above, nothing skipped.
+
+## Sandbox binary provisioning
+
+`near-workspaces` downloads the `neard` sandbox binary at compile time
+with a proxy-blind HTTP client, which fails in sandboxed/proxied
+environments even when the URL is alive. `run-xsuite.sh` therefore
+exports `NEAR_SANDBOX_BIN_PATH` (the override the crate honors at build
+and runtime) via `scripts/ensure-near-sandbox.sh`: curl download of
+`near-sandbox 2.9.0`, SHA-256 verification of tarball and binary against
+pinned digests, cached at `~/.cache/omnibounty/near-sandbox-2.9.0/`.
+Re-runs re-verify the cached digest instead of re-downloading. An
+already-exported `NEAR_SANDBOX_BIN_PATH` always wins (checked first).
 
 ## Security notes for operators and demos
 

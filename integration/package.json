@@ -6,7 +6,8 @@
   "type": "module",
   "scripts": {
     "e2e:prepare": "npx hardhat run --no-compile scripts/e2e-v3-prepare.mjs",
-    "e2e": "npx hardhat run --no-compile scripts/e2e-v3-run.mjs"
+    "e2e": "npx hardhat run --no-compile scripts/e2e-v3-run.mjs",
+    "e2e:local": "node scripts/e2e-local.mjs"
   },
   "dependencies": {
     "ethers": "6.17.0"

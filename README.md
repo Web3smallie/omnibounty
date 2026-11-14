@@ -46,6 +46,9 @@ retained for history only.
 
 ## Quick verification (reviewers)
 
+Fresh machine? Start with `./scripts/setup.sh` (Linux; installs Rust
+toolchains, Foundry, JS deps, sandbox binary; see JUDGES.md §4), then:
+
 ```sh
 cd contracts/near-v3 && cargo test --lib              # NEAR unit suite (133 tests)
 cargo test --features xsuite --test xsuite            # + sandbox suite (6 tests, needs built WASM)
@@ -53,7 +56,7 @@ cd ../base-v3 && forge test                            # escrow suite (26 tests)
 cd ../../relayer && npm install && npm test            # relayer suite (87 tests)
 cd ../tools && npm install && npm test                 # tools suites (37 tests)
 cd ../frontend && npm install && npm test              # frontend suite (440 tests)
-cd ../integration && npm ci && npm run e2e:prepare && npm run e2e   # E2E scenarios (7)
+cd .. && npm run e2e:local                                      # local cross-chain E2E (7 scenarios)
 ```
 
 See `contracts/near-v3/tests/README.md` for the WASM build + XSuite procedure

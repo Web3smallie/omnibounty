@@ -6,6 +6,22 @@ REAL relayer class submitting to the REAL compiled escrow bytecode.
 
 ## Flow
 
+One command from the repo root (canonical):
+
+```sh
+npm run e2e:local
+```
+
+It checks prerequisites, builds the escrow artifacts, regenerates a fresh
+fixture (deterministic clock, see below), runs scenarios A–F, and prints a
+verified report. `npm run e2e:local -- --no-regen` reuses the previous
+run's fixture instead of regenerating. Prerequisites: Node ≥ 22, `node_modules` in `integration/` and `relayer/`
+(`npm ci` in each; the harness imports relayer sources whose `ethers`
+resolves via `relayer/node_modules`), Foundry (`forge`), and, for regen,
+a Rust toolchain with `cargo +stable` (see `scripts/setup.sh`).
+
+Manual flow (same steps, for debugging):
+
 ```sh
 # 1. Build escrow artifacts + install deps
 (cd ../contracts/base-v3 && forge build)
@@ -20,11 +36,22 @@ npm run e2e:prepare
 npm run e2e
 ```
 
+## Deterministic test clock
+
 The harness redeploys in identical order and fails fast if addresses
-drift from the fixture (deploy-order guard). Voucher expiries are
-gen-time + 24h and the fixture deadline is gen-time + 1h, so regenerate
-whenever the run is more than minutes after generation (the harness
-rejects stale fixtures with instructions).
+drift from the fixture (deploy-order guard). All fixture timestamps
+(deadline = epoch + 1h, voucher expiries = epoch + 24h, proof times)
+derive from a single recorded `generated_at` epoch, and every runtime
+clock is checked against it: the fresh chain must start within
+`FIXTURE_FRESHNESS_SEC` (1h) of the fixture epoch or the run fails fast
+with regen instructions. Because `e2e:local` regenerates seconds before
+running, the standard flow can never go stale.
+
+`E2E_FIXTURE_TIME` pins the regen epoch for byte-reproducible fixtures
+(same inputs → identical file, verifiable with `cmp`);
+`E2E_FIXTURE_PATH` overrides which fixture file a run reads (default:
+`testdata/v3/e2e-vouchers.json`). Production freshness rules (proof
+windows, voucher TTL) are untouched — only test clocks are controlled.
 
 ## Provenance (read before citing results)
 
