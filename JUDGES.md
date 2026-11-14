@@ -123,6 +123,21 @@ cast call 0x63391c272A49c30f79eb6c3d8E10F0652Bb0F767 \
 # true / false  == claimed, not refunded
 ```
 
+**Latest Successful End-to-End Execution Evidence.**
+
+| Stage | Evidence |
+|---|---|
+| NEAR testnet transaction | [Vppk3PXy3PUgBuuCknxMpM9KCNJUkdoTyRWU9nYvJGz](https://testnet.nearblocks.io/txns/Vppk3PXy3PUgBuuCknxMpM9KCNJUkdoTyRWU9nYvJGz) |
+| Base Sepolia settlement | [0x90dea40bf4d1f23923c91faab63df795dfb902888746f6f13ea5e09301457973](https://sepolia.basescan.org/tx/0x90dea40bf4d1f23923c91faab63df795dfb902888746f6f13ea5e09301457973) |
+| NEAR sponsor | `diaryofdero.testnet` |
+| NEAR contributor | `web3smallie.testnet` |
+| Base payout recipient | `0xFc1c1607a4f233B87Aadb910645BeF946C05b9aC` |
+
+This record documents an additional successful testnet execution on NEAR
+testnet × Base Sepolia: the NEAR transaction and the Base Sepolia
+settlement transaction above serve as the corresponding evidence. The Run 5
+record above is preserved unchanged.
+
 `next_nonce`/`bounty_count` grow with chain use (shown as of
 2026-11-14); every other field above is stable. A judge comparing live
 output should expect those two counters — and only those — to differ.
