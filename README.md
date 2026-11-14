@@ -112,7 +112,15 @@ an escrow that only pays a recipient named in an MPC-signed voucher.
 
 ## Why NEAR Protocol?
 
-We chose NEAR Protocol because its native Chain Signatures infrastructure allows smart contracts to authorize transactions on external blockchains through a decentralized MPC network. This enables OmniBounty's NEAR contract to control an MPC-derived Base signer and authorize payout vouchers without storing or relying on a conventional private key for the external account.
+OmniBounty separates claim verification from reward settlement. The NEAR contract is responsible for deciding whether a contribution qualifies. It commits each bounty's acceptance-criteria hash, verifies the submitted Reclaim attestations against the configured matchers and witness set, enforces freshness, binds the GitHub PR author to the verified GitHub identity and payout recipient, and consumes nullifiers to prevent proof reuse.
+
+Once a claim is finalized, NEAR Chain Signatures authorizes a payout voucher using a fixed derivation path. The Base escrow independently verifies the voucher signature with `ecrecover`, checks its own settlement conditions and replay state, and releases the USDC reward to the bound recipient.
+
+Chain Signatures is the key architectural reason for choosing NEAR. It allows the NEAR contract to request signatures from a decentralized MPC network for an externally derived Base account, without storing or relying on a conventional private key for that account. The relayer submits signed vouchers; it does not ordinarily authorize them.
+
+There is an important trust assumption: the deployed relayer's EVM key also controls the Base escrow's owner privileges. A compromise could allow signer rotation and voucher forgery or redirection for funded, unclaimed slots. This limitation is disclosed in the security section and is a priority for production hardening.
+
+We did not choose NEAR because Base cannot verify Reclaim attestations. Reclaim also provides EVM verification options, so a Base-only design is possible. We chose NEAR to keep bounty criteria and claim-verification logic on a dedicated contract, keep the Base escrow focused on funding and settlement, and use NEAR's native Chain Signatures infrastructure to authorize cross-chain payouts without a conventional custodial key for the external signer.
 
 ## Architecture
 
@@ -293,6 +301,19 @@ confuse what each proves:
 | Recorded Rust evidence | A completed Rust run (133 unit, 6 XSuite, clean lints) | Independent reproduction (inspect only) |
 | Local E2E replay | JS/TS logic + full scenario flow on a local EVM (Node-only) | Rust sources, live chains, live MPC (uses test keys) |
 | Full test execution | Everything rebuilt and run from source on your machine | Live testnet behavior |
+
+Reviewer replay (fresh clone, Node 22+ only — no Rust, no Foundry):
+
+```sh
+cd relayer && npm ci
+cd ../integration && npm ci
+cd ..   # back to the repository root
+npm run e2e:local -- --no-regen   # 7/7 scenarios, frozen fixture
+```
+
+This is a local replay on an in-process EVM with fixture-embedded
+vouchers — not live testnet execution, not Rust verification, and not
+live MPC signing.
 
 ## Technology
 

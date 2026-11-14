@@ -82,8 +82,10 @@ describe("V2 escrow ABI selection", () => {
   });
 
   it("matches the compiled artifact ABI for bounties", () => {
+    // Committed frozen copy (see testdata/evm/PROVENANCE.md), so this
+    // test runs on a fresh clone with no Foundry build output present.
     const artifact = JSON.parse(
-      readFileSync(join(ROOT, "contracts", "base-v3", "out", "OmniEscrowV2.sol", "OmniEscrowV2.json"), "utf8")
+      readFileSync(join(ROOT, "testdata", "evm", "OmniEscrowV2.json"), "utf8")
     );
     const abiBounties = artifact.abi.find((e) => e.type === "function" && e.name === "bounties");
     assert.equal(abiBounties.outputs.length, 1);
