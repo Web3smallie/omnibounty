@@ -2,7 +2,7 @@
 // phase derivation for the settlement tracker. No network, no React —
 // covered by test/settlement.test.mjs. Every phase here is derived from
 // on-chain reads performed by the caller; nothing is simulated.
-import { formatUsdc } from "./display.mjs";
+import { formatUsdc, interpretNearTxOutcome, thrownTxHash } from "./display.mjs";
 import { extractProofFacts, validateProofShape } from "./validation.mjs";
 import { EVIDENCE, checkIdentityBinding, extractedOf } from "./reclaim.mjs";
 
@@ -54,6 +54,32 @@ export function parseClaimBundle(text) {
   }
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, bundle: { criteria_json: criteriaJson, proofs } };
+}
+
+/// Merge hash-verified criteria text into a pasted bundle that lacks it:
+/// when `verifiedCriteria` is non-empty and the bundle parses to an object
+/// WITHOUT criteria_json/criteriaJson, the verified document is injected
+/// (as the parsed object; the contract canonicalizes before hashing, so
+/// key order never matters). An explicitly pasted criteria_json always
+/// wins, and unparseable bundles pass through untouched so the normal
+/// parser reports the error. Pure: no network.
+export function mergeVerifiedCriteria(bundleText, verifiedCriteria) {
+  if (typeof verifiedCriteria !== "string" || verifiedCriteria.length === 0) return bundleText;
+  let raw;
+  try {
+    raw = JSON.parse(bundleText);
+  } catch {
+    return bundleText;
+  }
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return bundleText;
+  if (raw.criteria_json != null || raw.criteriaJson != null) return bundleText;
+  let doc;
+  try {
+    doc = JSON.parse(verifiedCriteria);
+  } catch {
+    return bundleText;
+  }
+  return JSON.stringify({ ...raw, criteria_json: doc });
 }
 
 /// Entries of one evidence kind inside a parsed bundle.
@@ -210,28 +236,37 @@ export function interpretDryOutcome(outcome) {
 /// Submit with mandatory preflight: run dryCall(args), submit via
 /// signCall(args) ONLY when the dry outcome passes. RPC throws and
 /// malformed responses fail closed (no wallet transaction). Both calls
-/// receive the identical args object (parity by reference).
+/// receive the identical args object (parity by reference). A resolved
+/// receipt carrying the wallet outcome is validated against its final
+/// execution status (defense in depth behind signAndSend); failures keep
+/// the transaction hash so the UI can still link the explorer.
 /**
  * @param {object} o
  * @param {QualifyArgs} o.args
  * @param {(args: QualifyArgs) => Promise<unknown>} o.dryCall
- * @param {(args: QualifyArgs) => Promise<{txHash: string|null}>} o.signCall
- * @returns {Promise<{ok: true, errors: string[], receipt: {txHash: string|null}} | {ok: false, errors: string[]}>}
+ * @param {(args: QualifyArgs) => Promise<{txHash: string|null, outcome?: unknown}>} o.signCall
+ * @returns {Promise<{ok: true, errors: string[], receipt: {txHash: string|null}} | {ok: false, errors: string[], txHash: string|null}>}
  */
 export async function submitWithPreflight({ args, dryCall, signCall }) {
   let dry;
   try {
     dry = await dryCall(args);
   } catch (e) {
-    return { ok: false, errors: [`Preflight check failed (${e instanceof Error ? e.message : String(e)}); refusing to submit.`] };
+    return { ok: false, errors: [`Preflight check failed (${e instanceof Error ? e.message : String(e)}); refusing to submit.`], txHash: null };
   }
   const verdict = interpretDryOutcome(dry);
-  if (!verdict.ok) return { ok: false, errors: verdict.errors };
+  if (!verdict.ok) return { ok: false, errors: verdict.errors, txHash: null };
   try {
     const receipt = await signCall(args);
+    if (receipt && typeof receipt === "object" && receipt.outcome != null) {
+      const v = interpretNearTxOutcome(receipt.outcome);
+      if (!v.ok) {
+        return { ok: false, errors: [v.error], txHash: v.txHash ?? receipt.txHash ?? null };
+      }
+    }
     return { ok: true, errors: [], receipt };
   } catch (e) {
-    return { ok: false, errors: [e instanceof Error ? e.message : String(e)] };
+    return { ok: false, errors: [e instanceof Error ? e.message : String(e)], txHash: thrownTxHash(e) };
   }
 }
 
@@ -246,6 +281,17 @@ export function selectOwnClaim(entries, recipient) {
     if (!best || (e.claim.claim_seq ?? 0) >= (best.claim.claim_seq ?? 0)) best = e;
   }
   return best;
+}
+
+/// Summarize a returning-claimant slot scan: entries are [{ slot,
+/// claim|null }] and failedSlots counts reads that errored (recorded as
+/// null claims). A match wins; otherwise any failed read makes the
+/// outcome uncertain (retry) rather than a false "none".
+export function summarizeOwnClaimScan(entries, recipient, failedSlots = 0) {
+  const own = selectOwnClaim(entries, recipient);
+  if (own) return { status: "found", slot: own.slot, claim: own.claim };
+  if (failedSlots > 0) return { status: "uncertain", slot: null, claim: null };
+  return { status: "none", slot: null, claim: null };
 }
 
 /// Derive the tracker phase from on-chain reads. `nowSec` is injectable so

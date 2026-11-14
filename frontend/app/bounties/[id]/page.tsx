@@ -6,6 +6,9 @@ import ClaimFormV3 from "../../../components/ClaimFormV3";
 import SettlementPanel from "../../../components/SettlementPanel";
 import { ExtLink, StatusPill } from "../../../components/ui";
 import EscrowState from "../../../components/EscrowState";
+import ErrorBoundary from "../../../components/ErrorBoundary";
+import ReturningClaimTracker from "../../../components/ReturningClaimTracker";
+import CriteriaDetails from "../../../components/CriteriaDetails";
 import { bountyCriteriaV3, bountyTitleV3 } from "../../../lib/settlement.mjs";
 import {
   baseAddressUrl,
@@ -72,7 +75,9 @@ export default async function BountyPage({ params }: { params: Promise<{ id: str
           <span className="amount-lg">{formatUsdc(bounty.amount)} USDC</span>
           <span className="pills">
             <StatusPill status={bounty.status} />
-            <EscrowState bountyId={bounty.id} />
+            <ErrorBoundary label="escrow status" resetKey={`escrow:${bounty.id}`}>
+              <EscrowState bountyId={bounty.id} />
+            </ErrorBoundary>
           </span>
         </div>
       </div>
@@ -109,23 +114,29 @@ export default async function BountyPage({ params }: { params: Promise<{ id: str
           This bounty is {bounty.status}; new claims are not accepted.
         </p>
       ) : (
-        <ClaimForm
-          bountyId={bounty.id}
-          bountyRepo={bounty.repo}
-          bountyPrNumber={bounty.pr_number}
-          bountyExpired={expired}
-        />
+        <ErrorBoundary label="claim form" resetKey={`claim:${bounty.id}`}>
+          <ClaimForm
+            key={bounty.id}
+            bountyId={bounty.id}
+            bountyRepo={bounty.repo}
+            bountyPrNumber={bounty.pr_number}
+            bountyExpired={expired}
+          />
+        </ErrorBoundary>
       )}
 
       {(voucher || bounty.status !== "open") && (
         <>
           <h2>Voucher &amp; settlement</h2>
-          <SettlementPanel
-            bountyId={bounty.id}
-            initialVoucher={voucher}
-            watch={true}
-            voucherTtlSec={voucherTtlSec}
-          />
+          <ErrorBoundary label="settlement tracker" resetKey={`settlement:${bounty.id}`}>
+            <SettlementPanel
+              key={bounty.id}
+              bountyId={bounty.id}
+              initialVoucher={voucher}
+              watch={true}
+              voucherTtlSec={voucherTtlSec}
+            />
+          </ErrorBoundary>
         </>
       )}
     </>
@@ -199,12 +210,30 @@ function BountyPageV3({ bounty }: { bounty: BountyViewV3 }) {
         <dd>{formatDateTime(bounty.created_at)}</dd>
       </dl>
 
+      <h2>About this bounty</h2>
+      <ErrorBoundary label="bounty details" resetKey={`details:${bounty.id}`}>
+        <CriteriaDetails key={bounty.id} bountyId={bounty.id} criteriaHash={bounty.criteria_hash} />
+      </ErrorBoundary>
+
       <h2>Claim</h2>
       {closedReason ? (
         <p className="muted">{closedReason}</p>
       ) : (
-        <ClaimFormV3 bountyId={bounty.id} slots={bounty.slots} bountyExpired={expired} />
+        <ErrorBoundary label="claim form" resetKey={`claim:${bounty.id}`}>
+          <ClaimFormV3
+            key={bounty.id}
+            bountyId={bounty.id}
+            slots={bounty.slots}
+            bountyExpired={expired}
+            criteriaHash={bounty.criteria_hash}
+          />
+        </ErrorBoundary>
       )}
+
+      <h2>Your claim</h2>
+      <ErrorBoundary label="returning claim tracker" resetKey={`returning:${bounty.id}`}>
+        <ReturningClaimTracker key={bounty.id} bountyId={bounty.id} slots={bounty.slots} />
+      </ErrorBoundary>
 
       {/* Multi-slot bounties have no single voucher to show here; the
           settlement tracker appears after a claim is submitted above. */}

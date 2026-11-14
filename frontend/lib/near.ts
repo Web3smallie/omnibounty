@@ -2,6 +2,7 @@
 // via wallet-selector. No keys are ever handled in this module.
 import { config } from "./config";
 import { describeFetchFailure } from "./display.mjs";
+import { createSharedInitializer } from "./walletInit.mjs";
 
 export interface BountyView {
   id: number;
@@ -172,7 +173,7 @@ export async function nearView<T>(method: string, args: Record<string, unknown>)
 }
 
 export const listBounties = (from = 0, limit = 50) =>
-  nearView<BountyView[]>("list_bounties", { from, limit });
+  nearView<(BountyView | BountyViewV3)[]>("list_bounties", { from, limit });
 export const getBounty = (bountyId: number) =>
   nearView<BountyView | null>("get_bounty", { bounty_id: bountyId });
 export const getVoucher = (bountyId: number) =>
@@ -206,37 +207,46 @@ export const getVoucherV3 = (bountyId: number, slot: number) =>
 
 export type { WalletSelector } from "@near-wallet-selector/core";
 
-let selectorPromise: Promise<import("@near-wallet-selector/core").WalletSelector> | null = null;
+type WalletSelectorHandle = import("@near-wallet-selector/core").WalletSelector;
 
-export function getSelector() {
-  if (!selectorPromise) {
-    selectorPromise = (async () => {
-      const { setupWalletSelector } = await import("@near-wallet-selector/core");
-      const { setupModal } = await import("@near-wallet-selector/modal-ui");
-      const { setupMyNearWallet } = await import("@near-wallet-selector/my-near-wallet");
-      const { setupMeteorWallet } = await import("@near-wallet-selector/meteor-wallet");
-      const { setupSender } = await import("@near-wallet-selector/sender");
-      const { setupNightly } = await import("@near-wallet-selector/nightly");
-      const { setupHereWallet } = await import("@near-wallet-selector/here-wallet");
-      const selector = await setupWalletSelector({
-        network: config.networkId,
-        // Every module below honors the selector network (testnet here);
-        // see frontend/test/wallets.test.mjs for the version/shape gate.
-        modules: [
-          setupMyNearWallet(),
-          setupMeteorWallet(),
-          setupSender(),
-          setupNightly(),
-          setupHereWallet(),
-        ],
-      });
-      const modal = setupModal(selector, { contractId: config.contractId });
-      // Expose sign-in through the returned selector handle.
-      (selector as unknown as { showModal: () => void }).showModal = () => modal.show();
-      return selector;
-    })();
+async function startSelector(): Promise<WalletSelectorHandle> {
+  const { assertBrowserWalletEnv } = await import("./walletInit.mjs");
+  assertBrowserWalletEnv();
+  const { setupWalletSelector } = await import("@near-wallet-selector/core");
+  const { setupModal } = await import("@near-wallet-selector/modal-ui");
+  const { setupMyNearWallet } = await import("@near-wallet-selector/my-near-wallet");
+  const { setupMeteorWallet } = await import("@near-wallet-selector/meteor-wallet");
+  const { setupSender } = await import("@near-wallet-selector/sender");
+  const { setupNightly } = await import("@near-wallet-selector/nightly");
+  const { setupHereWallet } = await import("@near-wallet-selector/here-wallet");
+  const selector = await setupWalletSelector({
+    network: config.networkId,
+    // Every module below honors the selector network (testnet here);
+    // see frontend/test/wallets.test.mjs for the version/shape gate.
+    modules: [
+      setupMyNearWallet(),
+      setupMeteorWallet(),
+      setupSender(),
+      setupNightly(),
+      setupHereWallet(),
+    ],
+  });
+  const modal = setupModal(selector, { contractId: config.contractId });
+  // Expose sign-in through the returned selector handle.
+  (selector as unknown as { showModal: () => void }).showModal = () => modal.show();
+  return selector;
+}
+
+let initSelector: (() => Promise<WalletSelectorHandle>) | null = null;
+
+export function getSelector(): Promise<WalletSelectorHandle> {
+  // Shared memoized attempt: concurrent callers share one in-flight
+  // initialization, and a failure clears the cache so retry starts fresh
+  // instead of replaying the rejection forever.
+  if (!initSelector) {
+    initSelector = createSharedInitializer(startSelector);
   }
-  return selectorPromise;
+  return initSelector();
 }
 
 export function showWalletModal(selector: unknown) {
@@ -250,6 +260,14 @@ const CLAIM_GAS = "150000000000000"; // 150 Tgas = contract CLAIM_MIN_GAS
 // proves 1 NEAR covers qualification storage; dust deposits fail).
 export const QUALIFY_GAS = "300000000000000";
 export const QUALIFY_DEPOSIT_YOCTO = "1000000000000000000000000";
+
+// V3 create_bounty: 300 Tgas + 0.05 NEAR. The contract prescribes "a few
+// hundredths of a NEAR" per call and keeps overpayment without refund
+// (lib.rs assert_storage_covered docs); 0.05 covers the worst-case
+// 16-slot bounty (~700 bytes at 1e19 yocto/byte) several times over.
+// mark_funded is non-payable: signAndSend defaults (deposit 0) apply.
+export const CREATE_BOUNTY_V3_GAS = "300000000000000";
+export const CREATE_BOUNTY_V3_DEPOSIT_YOCTO = "50000000000000000000000";
 
 export interface NearTxReceipt {
   txHash: string | null;
@@ -273,6 +291,17 @@ export async function signAndSend(
       },
     ],
   });
-  const { extractNearTxHash } = await import("./display.mjs");
-  return { txHash: extractNearTxHash(outcome) as string | null, outcome };
+  const { interpretNearTxOutcome } = await import("./display.mjs");
+  const verdict = interpretNearTxOutcome(outcome) as {
+    ok: boolean;
+    txHash: string | null;
+    error?: string;
+  };
+  if (!verdict.ok) {
+    throw Object.assign(new Error(verdict.error ?? "NEAR transaction failed."), {
+      txHash: verdict.txHash,
+      outcome,
+    });
+  }
+  return { txHash: verdict.txHash, outcome };
 }

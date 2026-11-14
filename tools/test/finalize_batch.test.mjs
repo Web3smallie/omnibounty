@@ -162,3 +162,69 @@ describe("runBatch", () => {
     assert.deepEqual(report.results, []);
   });
 });
+
+describe("in-flight pending_digest skip (P2-7)", () => {
+  const INFLIGHT = "0x" + "cd".repeat(32);
+  const ZERO = "0x" + "00".repeat(32);
+
+  it("skips non-zero pending_digest in discovery", async () => {
+    const account = mockAccount({
+      bounties: [BOUNTY({ id: 7 }), BOUNTY({ id: 8 })],
+      claims: {
+        "7:0": CLAIM({}), // matured, unsigned, no dispatch -> eligible
+        "8:0": CLAIM({ pending_digest: INFLIGHT, status: "finalized" }), // in flight -> skip
+      },
+    });
+    const found = await discoverMatured(account, DEP.contractId, DEP.nowSec);
+    assert.deepEqual(found.map((f) => [f.bountyId, f.slot]), [[7, 0]]);
+  });
+
+  it("treats zero and missing pending_digest as no dispatch (relayer parity)", async () => {
+    const noField = CLAIM({});
+    delete noField.pending_digest;
+    const account = mockAccount({
+      bounties: [BOUNTY({ id: 7 }), BOUNTY({ id: 8 }), BOUNTY({ id: 9 }), BOUNTY({ id: 10 })],
+      claims: {
+        "7:0": CLAIM({ pending_digest: null }), // zero (null) -> continues
+        "8:0": noField, // missing field -> continues (forward-compat, like the relayer)
+        "9:0": CLAIM({ pending_digest: ZERO }), // zero digest literal -> continues
+        "10:0": CLAIM({ pending_digest: ZERO, challenge_ends_at: 999 }), // continues INTO later checks -> immature skip
+      },
+    });
+    const found = await discoverMatured(account, DEP.contractId, DEP.nowSec);
+    assert.deepEqual(found.map((f) => [f.bountyId, f.slot]), [[7, 0], [8, 0], [9, 0]]);
+  });
+
+  it("skips in-flight claims without submitting while eligible claims finalize", async () => {
+    const account = mockAccount({
+      bounties: [BOUNTY({ id: 7 }), BOUNTY({ id: 8 })],
+      claims: {
+        "7:0": CLAIM({}),
+        "8:0": CLAIM({ pending_digest: INFLIGHT, status: "finalized" }),
+      },
+      vouchers: { "7:0": [null, VOUCHER] },
+    });
+    const report = await runBatch(
+      { account, ...DEP, sleepFn: noSleep, rounds: 3 },
+      { writeEvidence: noWrite }
+    );
+    assert.equal(report.code, 0);
+    assert.equal(account.calls.submits, 1); // no submission for the in-flight claim
+    assert.deepEqual(report.results.map((r) => [r.bountyId, r.status]), [[7, "finalized"]]);
+  });
+
+  it("fails safely on missing claims and failed reads", async () => {
+    // Missing claim view: skipped silently, nothing submitted.
+    const missing = mockAccount({ bounties: [BOUNTY({})], claims: {} });
+    const r1 = await runBatch({ account: missing, ...DEP, sleepFn: noSleep }, { writeEvidence: noWrite });
+    assert.equal(r1.code, 0);
+    assert.deepEqual(r1.results, []);
+    assert.equal(missing.calls.submits, 0);
+    // Failed get_claim read: loud discovery error, zero submissions.
+    const failing = mockAccount({ bounties: [BOUNTY({})], claims: { "7:0": CLAIM({}) }, failViews: "get_claim" });
+    const r2 = await runBatch({ account: failing, ...DEP, sleepFn: noSleep }, { writeEvidence: noWrite });
+    assert.equal(r2.code, 1);
+    assert.equal(r2.results[0].status, "discovery-error");
+    assert.equal(failing.calls.submits, 0);
+  });
+});

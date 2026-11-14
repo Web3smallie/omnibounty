@@ -1,0 +1,25 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-prove/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<id_login>[^\\\"]+)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"id\\\":(?<id_num>[0-9]+)[,}]\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/user\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794603335,
+    "context": "{\"extractedParameters\":{\"id_login\":\"Web3smallie\",\"id_num\":\"130228599\"},\"providerHash\":\"0x20074557de6c676d98fd788ead6ef28888959d5b0fba2da3814b5eb04b95647d\"}",
+    "identifier": "0x42d555097abc022a8d6fa9709225e40dfdfea363cea0c1ed28ee9ec903748e32",
+    "epoch": 1
+  },
+  "identifier": "0x42d555097abc022a8d6fa9709225e40dfdfea363cea0c1ed28ee9ec903748e32",
+  "signatures": [
+    "0xb52f908b98eec92bcae540e4086428fa9972fbc28a86fad9dc8a958b68a6e06039b514b15423ea0e7660ec3bc848ec325565ec37b2b33aa23bb3c9aafc70bb5e1b"
+  ],
+  "extractedParameterValues": {
+    "id_login": "Web3smallie",
+    "id_num": "130228599"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org:444/ws"
+    }
+  ]
+}

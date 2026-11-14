@@ -2,17 +2,18 @@
 // via the user's injected wallet (window.ethereum). No keys handled here.
 import { ethers } from "ethers";
 import { config } from "./config";
+import { claimedBitmapTotal } from "./display.mjs";
+import {
+  ESCROW_ABI,
+  ESCROW_ABI_V2,
+  ESCROW_VERSION_PROBES,
+  VOUCHER_TYPEHASH_EXPECTED,
+  VOUCHER_V2_TYPEHASH_EXPECTED,
+} from "./escrowAbi.mjs";
 
-export const ESCROW_ABI = [
-  "function usedVoucher(bytes32) view returns (bool)",
-  "function bounties(uint256) view returns (address token, uint256 amount, address sponsor, bool funded, bool claimed)",
-  "function mpcSigner() view returns (address)",
-  "function createBounty(uint256 bountyId, address token, uint256 amount)",
-  "function fundBounty(uint256 bountyId)",
-  "function cancelBounty(uint256 bountyId)",
-  "function claim((uint256 bountyId,address recipient,address token,uint256 amount,uint256 nonce,uint256 expiry,uint256 chainId,address escrow) v, uint8 sigV, bytes32 r, bytes32 s)",
-  "event VoucherClaimed(uint256 indexed bountyId, address indexed recipient, uint256 amount, uint256 nonce, bytes32 digest)",
-] as const;
+// Escrow ABI strings live in lib/escrowAbi.mjs (single source shared with
+// unit tests); re-exported here so existing import sites keep working.
+export { ESCROW_ABI, ESCROW_ABI_V2 };
 
 export const ERC20_ABI = [
   "function balanceOf(address) view returns (uint256)",
@@ -37,10 +38,80 @@ export interface EscrowBountyState {
   claimed: boolean;
 }
 
+export interface EscrowBountyStateV2 {
+  token: string;
+  sponsor: string;
+  funded: boolean;
+  totalFunded: string;
+  amounts: string[];
+  claimedBitmap: string;
+  refundedBitmap: string;
+  deadline: string;
+  criteriaHash: string;
+}
+
+export type EscrowVersion = "v1" | "v2" | "unknown";
+
+function paddedBytes32(hex: string): string {
+  return `0x${hex.replace(/^0x/, "").toLowerCase().padStart(64, "0")}`;
+}
+
+/// Probe one version-discriminating constant getter. Returns true only
+/// when the call succeeds AND returns the pinned value. A revert means
+/// the selector is absent (not this version). Transport/RPC failures
+/// propagate — never misreported as a version.
+async function probeTypehash(name: string, fragment: string, expected: string): Promise<boolean> {
+  const iface = new ethers.Interface([fragment]);
+  const data = iface.encodeFunctionData(name, []);
+  let raw: unknown;
+  try {
+    raw = await readProvider().call({ to: config.escrowAddress, data });
+  } catch (e) {
+    if ((e as { code?: string })?.code === "CALL_EXCEPTION") return false;
+    throw e;
+  }
+  return typeof raw === "string" && raw.toLowerCase() === paddedBytes32(expected);
+}
+
+async function probeEscrowVersion(): Promise<EscrowVersion> {
+  if (await probeTypehash("VOUCHER_V2_TYPEHASH", ESCROW_VERSION_PROBES.v2, VOUCHER_V2_TYPEHASH_EXPECTED)) {
+    return "v2";
+  }
+  if (await probeTypehash("VOUCHER_TYPEHASH", ESCROW_VERSION_PROBES.v1, VOUCHER_TYPEHASH_EXPECTED)) {
+    return "v1";
+  }
+  return "unknown";
+}
+
+let versionProbe: Promise<EscrowVersion> | null = null;
+
+/// Detect the deployed escrow version (cached per session). A V1-shaped
+/// `bounties` decode of V2 returndata succeeds silently with garbage
+/// fields, so versioned reads refuse to decode before this check passes.
+export function detectEscrowVersion(): Promise<EscrowVersion> {
+  if (!versionProbe) {
+    versionProbe = probeEscrowVersion().catch((e) => {
+      versionProbe = null; // transport failure: retry next time, never cache
+      throw e;
+    });
+  }
+  return versionProbe;
+}
+
+async function requireEscrowVersion(expected: "v1" | "v2"): Promise<void> {
+  const detected = await detectEscrowVersion();
+  if (detected !== expected) {
+    throw new Error(
+      `Escrow version mismatch: this operation needs the ${expected.toUpperCase()} escrow but the configured escrow reported ${detected}.`
+    );
+  }
+}
+
 export interface PayoutTx {
   txHash: string;
   blockNumber: number;
   amount: string;
+  slotIndex?: number;
 }
 
 export function readProvider(): ethers.JsonRpcProvider {
@@ -120,7 +191,17 @@ export async function usdcBalanceOf(owner: string): Promise<bigint> {
   return (await usdc.balanceOf(owner)) as bigint;
 }
 
+export async function usdcAllowance(owner: string, spender: string): Promise<bigint> {
+  const usdc = new ethers.Contract(config.usdcAddress, ERC20_ABI, readProvider());
+  return (await usdc.allowance(owner, spender)) as bigint;
+}
+
+export async function escrowWithSignerV2(): Promise<ethers.Contract> {
+  return new ethers.Contract(config.escrowAddress, ESCROW_ABI_V2, await browserSigner());
+}
+
 export async function escrowBountyState(bountyId: number): Promise<EscrowBountyState> {
+  await requireEscrowVersion("v1");
   const escrow = readEscrow();
   const b = (await escrow.bounties(bountyId)) as unknown as {
     token: string;
@@ -132,9 +213,89 @@ export async function escrowBountyState(bountyId: number): Promise<EscrowBountyS
   return { token: b.token, amount: b.amount.toString(), sponsor: b.sponsor, funded: b.funded, claimed: b.claimed };
 }
 
+/// V2 escrow bounty struct, decoded strictly per `OmniEscrowV2.sol`
+/// (token, sponsor, deadline, criteriaHash, funded, totalFunded, amounts,
+/// claimedBitmap, refundedBitmap). Refuses to decode unless the deployed
+/// escrow probes as V2, and validates the decoded shape before returning.
+export async function escrowBountyStateV2(bountyId: number): Promise<EscrowBountyStateV2> {
+  await requireEscrowVersion("v2");
+  const escrow = readEscrowV2();
+  const b = (await escrow.bounties(bountyId)) as unknown as {
+    token: unknown;
+    sponsor: unknown;
+    deadline: unknown;
+    criteriaHash: unknown;
+    funded: unknown;
+    totalFunded: unknown;
+    amounts: unknown;
+    claimedBitmap: unknown;
+    refundedBitmap: unknown;
+  };
+  if (
+    typeof b?.token !== "string" ||
+    typeof b?.sponsor !== "string" ||
+    typeof b?.deadline !== "bigint" ||
+    typeof b?.criteriaHash !== "string" ||
+    typeof b?.funded !== "boolean" ||
+    typeof b?.totalFunded !== "bigint" ||
+    !Array.isArray(b?.amounts) ||
+    !b.amounts.every((a): a is bigint => typeof a === "bigint") ||
+    typeof b?.claimedBitmap !== "bigint" ||
+    typeof b?.refundedBitmap !== "bigint"
+  ) {
+    throw new Error("Escrow version mismatch: V2 bounty struct failed validation.");
+  }
+  return {
+    token: b.token,
+    sponsor: b.sponsor,
+    funded: b.funded,
+    totalFunded: b.totalFunded.toString(),
+    amounts: b.amounts.map((a) => a.toString()),
+    claimedBitmap: b.claimedBitmap.toString(),
+    refundedBitmap: b.refundedBitmap.toString(),
+    deadline: b.deadline.toString(),
+    criteriaHash: b.criteriaHash,
+  };
+}
+
 export async function isVoucherUsed(digest: string): Promise<boolean> {
   const escrow = readEscrow();
-  return (await escrow.usedVoucher(digest)) as boolean;
+  const used: unknown = await escrow.usedVoucher(digest);
+  if (typeof used !== "boolean") {
+    // Null/malformed reads are unknown, never evidence: the settlement
+    // poller retries these with backoff instead of spinning or settling.
+    throw new Error("Base escrow returned a malformed usedVoucher result (expected boolean).");
+  }
+  return used;
+}
+
+export function readEscrowV2(): ethers.Contract {
+  return new ethers.Contract(config.escrowAddress, ESCROW_ABI_V2, readProvider());
+}
+
+const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
+
+/// Verified settled USDC for one V3 bounty: sums slot amounts whose
+/// claimedBitmap bit is set (the escrow sets the bit atomically with the
+/// USDC transfer). Unknown bounties (zero-sponsor struct) settle nothing:
+/// `{ paid: 0n, ok: true }`. RPC or decoding failures report
+/// `{ paid: 0n, ok: false }` — never a silent zero.
+export async function escrowV2PaidTotal(bountyId: number): Promise<{ paid: bigint; ok: boolean }> {
+  try {
+    const escrow = readEscrowV2();
+    const b = (await escrow.bounties(bountyId)) as unknown as {
+      sponsor?: unknown;
+      amounts?: unknown;
+      claimedBitmap?: unknown;
+    };
+    if (typeof b?.sponsor === "string" && b.sponsor.toLowerCase() === ZERO_ADDRESS) {
+      return { paid: 0n, ok: true };
+    }
+    if (typeof b?.sponsor !== "string") return { paid: 0n, ok: false };
+    return { paid: claimedBitmapTotal(b.amounts, b.claimedBitmap), ok: true };
+  } catch {
+    return { paid: 0n, ok: false };
+  }
 }
 
 async function ethRpc<T>(method: string, params: unknown[]): Promise<T> {
@@ -173,22 +334,31 @@ async function bisectBlockAt(targetTs: number, latest: number): Promise<number> 
 /// Find the real USDC payout transaction for a bounty by scanning the
 /// escrow's VoucherClaimed logs in small RPC-safe chunks, starting from
 /// the claim block (located by timestamp bisection) and stopping at the
-/// first match. `claimTs` is unix seconds (voucher expiry minus TTL).
-/// `onProgress(scanned, total)` reports chunk progress for the UI.
+/// first receipt-verified match. `claimTs` is unix seconds (voucher expiry
+/// minus TTL). `onProgress(scanned, total)` reports chunk progress.
+/// The log topic and decoder follow the detected escrow version (V1 and
+/// V2 events have different topics and data layouts); an unverifiable
+/// escrow refuses the scan instead of decoding with the wrong layout.
 /// Returns null when no payout log exists in the scan budget — never a
 /// fabricated hash.
 export async function findPayoutTx(
   bountyId: number,
   opts?: { claimTs?: number; onProgress?: (scanned: number, total: number) => void }
 ): Promise<PayoutTx | null> {
-  const latest = Number(await ethRpc<string>("eth_blockNumber", []));
   const {
-    findVoucherClaimedTx,
-    VOUCHER_CLAIMED_TOPIC,
+    payoutScanSpec,
+    isSuccessfulReceipt,
     chunkRanges,
     PAYOUT_START_PAD,
     PAYOUT_MAX_CHUNKS,
   } = await import("./display.mjs");
+  const spec = (
+    payoutScanSpec as (v: string) => {
+      topic: string;
+      decode: (logs: unknown, bountyId: number) => (PayoutTx & { slotIndex?: number }) | null;
+    }
+  )(await detectEscrowVersion());
+  const latest = Number(await ethRpc<string>("eth_blockNumber", []));
   let from: number;
   if (opts?.claimTs) {
     const claimBlock = await bisectBlockAt(opts.claimTs - 1800, latest);
@@ -205,7 +375,7 @@ export async function findPayoutTx(
         fromBlock: toHexBlock(s),
         toBlock: toHexBlock(e),
         address: config.escrowAddress,
-        topics: [VOUCHER_CLAIMED_TOPIC, bountyTopic],
+        topics: [spec.topic, bountyTopic],
       },
     ];
     try {
@@ -215,6 +385,20 @@ export async function findPayoutTx(
       return await ethRpc<unknown[]>("eth_getLogs", params);
     }
   };
+  // A matched log promises a payout transaction; the receipt proves it
+  // mined successfully. Same retry-once policy as log chunks; a bad or
+  // missing receipt keeps the scan going instead of linking a bad hash.
+  const verifyReceipt = async (txHash: string): Promise<boolean> => {
+    const fetchReceipt = () => ethRpc<{ status?: unknown }>("eth_getTransactionReceipt", [txHash]);
+    let receipt: { status?: unknown };
+    try {
+      receipt = await fetchReceipt();
+    } catch {
+      await new Promise((r) => setTimeout(r, 1000));
+      receipt = await fetchReceipt();
+    }
+    return (isSuccessfulReceipt as (r: unknown) => boolean)(receipt);
+  };
   let scanned = 0;
   for (let i = 0; i < chunks.length; i += SCAN_BATCH) {
     const batch = chunks.slice(i, i + SCAN_BATCH);
@@ -222,11 +406,8 @@ export async function findPayoutTx(
     scanned += batch.length;
     opts?.onProgress?.(scanned, chunks.length);
     for (const logs of results) {
-      const found = (findVoucherClaimedTx as (l: unknown, b: number) => PayoutTx | null)(
-        logs,
-        bountyId
-      );
-      if (found) return found;
+      const found = spec.decode(logs, bountyId);
+      if (found && (await verifyReceipt(found.txHash))) return found;
     }
   }
   return null;

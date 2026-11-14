@@ -1,14 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { buildQualifyArgs, planClaimSubmission, submitWithPreflight } from "../lib/settlement.mjs";
+import { useEffect, useRef, useState } from "react";
+import { buildQualifyArgs, mergeVerifiedCriteria, planClaimSubmission, submitWithPreflight } from "../lib/settlement.mjs";
+import { createBusyGuard, createSubmitGuard } from "../lib/submitGuard.mjs";
 import { EVIDENCE } from "../lib/reclaim.mjs";
-import { QUALIFY_DEPOSIT_YOCTO, QUALIFY_GAS, dryQualifyV3, getSelector, signAndSend } from "../lib/near";
+import { QUALIFY_DEPOSIT_YOCTO, QUALIFY_GAS, dryQualifyV3, getClaimByPr, getSelector, signAndSend } from "../lib/near";
 import { config } from "../lib/config";
 import { useWallets } from "./wallets";
 import { ExtLink, LoadingDots } from "./ui";
+import CriteriaPanel from "./CriteriaPanel";
 import SettlementPanel from "./SettlementPanel";
+import ErrorBoundary from "./ErrorBoundary";
 import { nearTxUrl, shortenAddress } from "../lib/display.mjs";
+import { shouldShowNearInitError } from "../lib/walletInit.mjs";
 
 interface ProofFacts {
   merged: string;
@@ -24,20 +28,22 @@ interface ParsedBundle {
 }
 
 /// V3 claim form: one bundle paste -> one `qualify_claim` wallet approval.
-/// Finalization is automatic (the relayer submits permissionless
-/// `finalize_claim` once the challenge window elapses), so the claimant
-/// never takes a second action: after qualification this hands off to the
-/// settlement tracker below.
+/// Finalization is automatic (matured claims are picked up for the
+/// permissionless `finalize_claim` without claimant action), so the
+/// claimant never takes a second action: after qualification this hands
+/// off to the settlement tracker below.
 export default function ClaimFormV3({
   bountyId,
   slots,
   bountyExpired,
+  criteriaHash,
 }: {
   bountyId: number;
   slots: string[];
   bountyExpired: boolean;
+  criteriaHash: string;
 }) {
-  const { nearAccount, connectNear } = useWallets();
+  const { nearAccount, connectNear, nearStatus, nearError, retryNear } = useWallets();
   const [bundleText, setBundleText] = useState("");
   const [recipient, setRecipient] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -46,12 +52,29 @@ export default function ClaimFormV3({
   const [busyClaim, setBusyClaim] = useState(false);
   const [claimTx, setClaimTx] = useState<string | null>(null);
   const [claimed, setClaimed] = useState(false);
+  const [failedTx, setFailedTx] = useState<string | null>(null);
+  const [verifiedCriteria, setVerifiedCriteria] = useState<string | null>(null);
+  const [alreadyPr, setAlreadyPr] = useState<number | null>(null);
+  const busyClaimRef = useRef(createBusyGuard());
+  const mountedRef = useRef(true);
+  const liveWallets = useRef({ nearAccount });
+  liveWallets.current.nearAccount = nearAccount;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   function analyze(): { bundle: ParsedBundle; facts: ProofFacts } | null {
     setErrors([]);
     setFacts(null);
     setBundle(null);
-    const planned = planClaimSubmission(bundleText, recipient || null);
+    const planned = planClaimSubmission(
+      mergeVerifiedCriteria(bundleText, verifiedCriteria),
+      recipient || null
+    );
     if (!planned.ok) {
       setErrors(planned.errors ?? ["Invalid claim bundle."]);
       return null;
@@ -79,34 +102,57 @@ export default function ClaimFormV3({
       setErrors(["Connect your NEAR wallet first — the claim is submitted from that account."]);
       return;
     }
+    if (!busyClaimRef.current.tryAcquire()) return; // double-click: a submission is already running
+    const guard = createSubmitGuard({ bountyId, nearAccount });
     // One builder, one args object: the wallet transaction sends exactly
     // what the read-only preflight just approved — no drift between them.
     const args = buildQualifyArgs(bountyId, a.bundle, recipient.trim());
     setBusyClaim(true);
+    setFailedTx(null);
     try {
+      // Lost-receipt recovery: if this PR already has a claim slot (a
+      // previous submission landed), track it instead of resubmitting. A
+      // failing read fails open — the contract still rejects duplicates.
+      try {
+        const existingSlot = await getClaimByPr(bountyId, Number(a.facts.number));
+        if (typeof existingSlot === "number") {
+          if (mountedRef.current) setAlreadyPr(Number(a.facts.number));
+          return;
+        }
+      } catch {
+        // Proceed: the pre-submit check is best-effort only.
+      }
       const selector = await getSelector();
+      if (!mountedRef.current) return;
       const submitted = await submitWithPreflight({
         args,
         dryCall: (q) => dryQualifyV3(q.bounty_id, q.criteria_json, q.proofs, q.recipient),
-        signCall: (q) => signAndSend(selector, "qualify_claim", q, QUALIFY_DEPOSIT_YOCTO, QUALIFY_GAS),
+        signCall: (q) => {
+          guard.assertUnchanged({ bountyId, nearAccount: liveWallets.current.nearAccount });
+          return signAndSend(selector, "qualify_claim", q, QUALIFY_DEPOSIT_YOCTO, QUALIFY_GAS);
+        },
       });
+      if (!mountedRef.current) return;
       if (!submitted.ok) {
         setErrors(submitted.errors ?? ["Claim rejected."]);
+        setFailedTx(submitted.txHash ?? null);
         return;
       }
       setClaimTx(submitted.receipt.txHash);
       setClaimed(true);
     } catch (e) {
+      if (!mountedRef.current) return;
       setErrors([e instanceof Error ? e.message : String(e)]);
     } finally {
-      setBusyClaim(false);
+      busyClaimRef.current.release();
+      if (mountedRef.current) setBusyClaim(false);
     }
   }
 
   if (claimed && facts) {
     return (
       <div>
-        <div className="notice ok">
+        <div className="notice ok" role="status">
           <strong>Claim submitted on NEAR.</strong>{" "}
           {claimTx ? (
             <span>
@@ -119,16 +165,42 @@ export default function ClaimFormV3({
             <span className="muted small">(wallet did not return a transaction hash)</span>
           )}
           <p className="muted small" style={{ marginTop: 4 }}>
-            No further action needed — the relayer finalizes matured claims automatically, then
-            settles the signed voucher on Base.
+            No further action needed — matured claims are finalized automatically, then
+            settled on Base.
           </p>
         </div>
-        <SettlementPanel
-          bountyId={bountyId}
-          initialVoucher={null}
-          watch={true}
-          v3={{ slots, recipient: recipient.trim(), prNumber: Number(facts.number) }}
-        />
+        <ErrorBoundary label="settlement tracker" resetKey={`settlement:${bountyId}`}>
+          <SettlementPanel
+            key={bountyId}
+            bountyId={bountyId}
+            initialVoucher={null}
+            watch={true}
+            v3={{ slots, recipient: recipient.trim(), prNumber: Number(facts.number) }}
+          />
+        </ErrorBoundary>
+      </div>
+    );
+  }
+
+  if (alreadyPr !== null) {
+    return (
+      <div>
+        <div className="notice warn" role="status">
+          <strong>A claim for PR #{alreadyPr} is already on NEAR.</strong>{" "}
+          <span className="muted small">
+            A previous submission landed — track its qualification and settlement below instead of
+            submitting again.
+          </span>
+        </div>
+        <ErrorBoundary label="settlement tracker" resetKey={`settlement:${bountyId}`}>
+          <SettlementPanel
+            key={bountyId}
+            bountyId={bountyId}
+            initialVoucher={null}
+            watch={true}
+            v3={{ slots, recipient: recipient.trim(), prNumber: alreadyPr }}
+          />
+        </ErrorBoundary>
       </div>
     );
   }
@@ -136,7 +208,7 @@ export default function ClaimFormV3({
   return (
     <div className="claim-flow">
       {bountyExpired && (
-        <div className="notice error">
+        <div className="notice error" role="alert">
           This bounty is past its deadline. The contract will reject new claims.
         </div>
       )}
@@ -152,20 +224,33 @@ export default function ClaimFormV3({
           {`{"criteria_json": {…sponsor criteria…},\n "proofs": [{"evidence_type": 1, "proof": {…pr…}},\n           {"evidence_type": 7, "proof": {…identity…}}]}`}
         </pre>
         <p className="muted small">
-          Get <code>criteria_json</code> from the sponsor listing. Generate the proofs with{" "}
-          <code>scripts/prove.mjs</code> and <code>scripts/prove_identity.mjs</code> (see{" "}
+          Get <code>criteria_json</code> from the criteria panel below (verified against the
+          on-chain hash) or paste the sponsor&apos;s document there for verification. Generate
+          the proofs with <code>scripts/prove.mjs</code> and{" "}
+          <code>scripts/prove_identity.mjs</code> on your own machine (see{" "}
           <code>frontend/README.md</code>); the app secret and your GitHub token stay on your
-          machine. Qualification costs 1 NEAR storage deposit plus gas from your NEAR wallet.
+          machine and never enter this page. Qualification costs 1 NEAR storage deposit plus
+          gas from your NEAR wallet.
         </p>
       </details>
 
+      <CriteriaPanel bountyId={bountyId} criteriaHash={criteriaHash} onVerified={setVerifiedCriteria} />
+
       <label className="field">
         Claim bundle JSON
+        {verifiedCriteria ? (
+          <span className="hint">
+            Verified criteria will be attached automatically — your bundle only needs{" "}
+            <code>proofs</code>.
+          </span>
+        ) : null}
         <textarea
           value={bundleText}
           onChange={(e) => setBundleText(e.target.value)}
           placeholder='{"criteria_json": …, "proofs": [{"tag": "pr", "proof": …}]}'
           spellCheck={false}
+          aria-invalid={errors.length > 0}
+          aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
         />
       </label>
       <label className="field">
@@ -180,6 +265,8 @@ export default function ClaimFormV3({
             placeholder="0x…"
             autoComplete="off"
             spellCheck={false}
+            aria-invalid={errors.length > 0}
+            aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
           />
           {facts && (
             <button type="button" className="suggest" onClick={() => setRecipient(facts.owner)}>
@@ -213,11 +300,27 @@ export default function ClaimFormV3({
       )}
 
       {errors.length > 0 && (
-        <ul className="errors">
+        <ul className="errors" id="claim-errors" role="alert">
           {errors.map((e, i) => (
             <li key={i}>{e}</li>
           ))}
         </ul>
+      )}
+      {failedTx && (
+        <p className="muted small">
+          Failed transaction:{" "}
+          <ExtLink href={nearTxUrl(config.networkId, failedTx)}>
+            <code>{shortenAddress(failedTx)} ↗</code>
+          </ExtLink>
+        </p>
+      )}
+      {shouldShowNearInitError(nearStatus, nearAccount) && (
+        <div className="notice error" role="alert">
+          NEAR wallet setup failed: {nearError}{" "}
+          <button type="button" onClick={retryNear}>
+            Retry setup
+          </button>
+        </div>
       )}
 
       <div className="row">

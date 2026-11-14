@@ -1,6 +1,14 @@
 // OmniBounty V3 acceptance-criteria: canonicalization, hashing, validation,
 // proof-join and nullifier-key helpers. Pure, dependency-light (canonicalize
-// for key sorting, ethers for keccak), shared by tooling and node:test.
+// for key sorting, ethers for keccak).
+// Production path (NOT test-only, see P2-3): sponsorV3.mjs imports the
+// creation side (parseAndValidateCriteria, hashCriteriaDocument,
+// CRITERIA_SCHEMA_ID/VERSION) and criteriaSource.mjs imports the retrieval
+// side (strictParseJson, validateCriteria, hashCriteriaDocument).
+// Intentionally frontend-test-only: matchEndpointUrl, checkCrossProofJoin,
+// buildNullifierKey and EVIDENCE_TYPE are the cross-language reference for
+// the NEAR contract (contracts/near-v3 rules.rs/reclaim.rs mirror them
+// case-for-case); golden vectors in test/criteria.test.mjs pin parity.
 // Normative companion: docs/v3/CRITERIA_SCHEMA.json + docs/v3/CANONICALIZATION.md
 import canonicalize from "canonicalize";
 import { ethers } from "ethers";

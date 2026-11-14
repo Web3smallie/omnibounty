@@ -197,3 +197,57 @@ describe("scheduleConsistency", () => {
     assert.equal(validateScheduleConsistency(near, null).ok, false);
   });
 });
+
+describe("validateV2LiveShape", () => {
+  // Regression: the E2E#4 chain voucher (bounty 223339065907692, slot 0,
+  // nonce 4) must validate end-to-end: digest recompute, mixed-case
+  // escrow binding, and real testnet-MPC signer recovery. Public chain
+  // data, inlined so the test never touches evidence files. nowSec is
+  // pinned pre-expiry so this test never rots.
+  const LIVE_V2 = {
+    voucher: {
+      bounty_id: 223339065907692,
+      slot_index: 0,
+      recipient: "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+      token: "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+      amount: "1000000",
+      nonce: 4,
+      expiry: 1794690537,
+      chain_id: 84532,
+      escrow: "0x63391c272a49c30f79eb6c3d8e10f0652bb0f767",
+      criteria_hash: "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+      digest: "0x934e1cea8d0731f734011920385116f16c1a7133119859528869c2fd6a6c8898",
+    },
+    v: 28,
+    r: "0xc5ad65dc998616b649227c506c17c2d5839232ec1d65572e8e71dd2c0d268314",
+    s: "0x6bcda1691f951e3b6ddc331dd81455f2eb0db0787077c928b14741a406b2af0f",
+  };
+
+  it("accepts the real E2E#4 chain voucher with digest match", () => {
+    const r = validateSignedVoucherV2(LIVE_V2, {
+      expectedChainId: 84532,
+      escrowAddress: "0x63391c272A49c30f79eb6c3d8E10F0652Bb0F767",
+      mpcSigner: "0x4b204ae1890a0cd49cc594fe712fea4ac765a2f9",
+      nowSec: 1794600000,
+    });
+    assert.equal(r.ok, true);
+    assert.equal(r.digest, LIVE_V2.voucher.digest);
+  });
+
+  it("rejects the live voucher past expiry or under the wrong signer", () => {
+    const base = {
+      expectedChainId: 84532,
+      escrowAddress: "0x63391c272A49c30f79eb6c3d8E10F0652Bb0F767",
+      mpcSigner: "0x4b204ae1890a0cd49cc594fe712fea4ac765a2f9",
+    };
+    assert.equal(validateSignedVoucherV2(LIVE_V2, { ...base, nowSec: 1794690537 }).ok, false);
+    assert.equal(
+      validateSignedVoucherV2(LIVE_V2, {
+        ...base,
+        nowSec: 1794600000,
+        mpcSigner: "0x73dfe93ac7024492b21c5ca8d6f301ea978abb82",
+      }).ok,
+      false
+    );
+  });
+});

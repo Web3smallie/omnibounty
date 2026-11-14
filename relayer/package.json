@@ -7,7 +7,7 @@
   "scripts": {
     "start": "node src/index.mjs",
     "once": "node src/index.mjs --once",
-    "test": "node --test test/config.test.mjs test/validate.test.mjs test/validateV2.test.mjs test/near.test.mjs test/store.test.mjs test/relayer.test.mjs test/relayerV2.test.mjs test/enumerateV2.test.mjs test/finalize.test.mjs test/validate_live_shape.test.mjs"
+    "test": "node --test test/config.test.mjs test/validate.test.mjs test/validateV2.test.mjs test/near.test.mjs test/store.test.mjs test/relayer.test.mjs test/relayerV2.test.mjs test/enumerateV2.test.mjs test/finalize.test.mjs test/validate_live_shape.test.mjs test/abiV2.test.mjs"
   },
   "dependencies": {
     "ethers": "6.17.0",

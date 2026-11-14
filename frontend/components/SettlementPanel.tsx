@@ -1,17 +1,55 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { getClaim, getClaimByPr, getVoucher, getVoucherV3 } from "../lib/near";
 import type { ClaimViewV3, SignedVoucherView, SignedVoucherViewV2 } from "../lib/near";
 import { derivePhase, selectOwnClaim } from "../lib/settlement.mjs";
+import { createSettlePoller } from "../lib/settlePoll.mjs";
+import {
+  formatWaitDuration,
+  maturedAtSec,
+  relayerPipelineStatus,
+  settleOverdue,
+  stageElapsedSec,
+} from "../lib/relayerStatus.mjs";
 import { findPayoutTx, isVoucherUsed } from "../lib/base";
 import type { PayoutTx } from "../lib/base";
 import { baseAddressUrl, baseBlockUrl, baseTxUrl, formatDateTime, formatUsdc, shortenAddress } from "../lib/display.mjs";
 import { ExtLink, LoadingDots } from "./ui";
 
+/// Settlement-check lifecycle states (mirrors lib/settlePoll.mjs): only
+/// "settled" means paid; "unavailable"/"failed" stop auto-polling and offer
+/// a manual retry instead of spinning forever.
+type SettleStatus = "checking" | "settled" | "not-settled" | "unavailable" | "failed";
+
+interface SettleSnapshot {
+  status: SettleStatus;
+  used: boolean | null;
+  failures: number;
+  error: string | null;
+  attempt: number;
+}
+
+interface SettlePoller {
+  start: () => boolean;
+  retry: () => boolean;
+  stop: () => void;
+}
+
+/// Consecutive NEAR voucher-fetch failures tolerated before the V1 tracker
+/// surfaces its error phase: one transient RPC blip must not kill polling.
+const VOUCHER_FETCH_MAX_FAILURES = 3;
+
 type Phase =
   | { kind: "waiting-voucher" }
-  | { kind: "voucher"; voucher: SignedVoucherView; used: boolean | null; payout: PayoutTx | null }
+  | {
+      kind: "voucher";
+      voucher: SignedVoucherView;
+      used: boolean | null;
+      payout: PayoutTx | null;
+      settleStatus: SettleStatus;
+      settleError: string | null;
+    }
   | { kind: "error"; message: string };
 
 type VoucherLike = SignedVoucherView | SignedVoucherViewV2;
@@ -23,7 +61,9 @@ export interface V3Watch {
 }
 
 /// Shared voucher + settlement rendering (V1 and V3 vouchers carry the same
-/// display fields). `used === null` means still checking — never shown as paid.
+/// display fields). `used === null` means the settlement state is unknown —
+/// never shown as paid, and never left spinning without recourse: an
+/// exhausted/failed check shows its message with a retry action.
 function VoucherDetail({
   bountyId,
   voucher,
@@ -32,8 +72,13 @@ function VoucherDetail({
   watching,
   scanning,
   scan,
+  scanError,
+  settleStatus,
+  settleError,
   voucherTtlSec,
   onWatch,
+  onRetryScan,
+  onRetrySettle,
 }: {
   bountyId: number;
   voucher: VoucherLike;
@@ -42,10 +87,23 @@ function VoucherDetail({
   watching: boolean;
   scanning: boolean;
   scan: { scanned: number; total: number } | null;
+  scanError: string | null;
+  settleStatus: SettleStatus;
+  settleError: string | null;
   voucherTtlSec: number;
   onWatch: () => void;
+  onRetryScan: () => void;
+  onRetrySettle: () => void;
 }) {
-  void voucherTtlSec;
+  const nowSec = Math.floor(Date.now() / 1000);
+  // Settlement overdue note: only for a confirmed-unsettled voucher far
+  // past creation. Unknown states (used === null) never alarm here —
+  // P1-10 owns those, and our own RPC failures are not relayer delays.
+  const voucherCreatedAt = voucher.voucher.expiry - voucherTtlSec;
+  const settleLate =
+    used === false && settleOverdue({ voucherCreatedAt, used, nowSec })
+      ? formatWaitDuration(stageElapsedSec(voucherCreatedAt, nowSec))
+      : null;
   return (
     <div className="voucher">
       <h3>Signed voucher</h3>
@@ -70,21 +128,37 @@ function VoucherDetail({
         </dd>
       </dl>
       {used === null ? (
-        <div className="notice warn">
-          {scanning || scan ? (
-            <LoadingDots
-              label={
-                scan
-                  ? `Settled — locating the payout transaction (${scan.scanned}/${scan.total} ranges)`
-                  : "Settled — locating the payout transaction"
-              }
-            />
-          ) : (
-            <LoadingDots label="Checking Base escrow settlement" />
-          )}
-        </div>
+        settleStatus === "unavailable" || settleStatus === "failed" ? (
+          <div className="notice error" role="alert">
+            {settleStatus === "failed" ? "Settlement check failed" : "Settlement check temporarily unavailable"}
+            {settleError ? `: ${settleError}` : ""}{" "}
+            <button onClick={onRetrySettle}>Retry check</button>
+          </div>
+        ) : watching ? (
+          <div className="notice warn">
+            {scanning || scan ? (
+              <LoadingDots
+                label={
+                  scan
+                    ? `Settled — locating the payout transaction (${scan.scanned}/${scan.total} ranges)`
+                    : "Settled — locating the payout transaction"
+                }
+              />
+            ) : (
+              <LoadingDots label="Checking Base escrow settlement" />
+            )}
+          </div>
+        ) : (
+          <div className="notice warn" role="status">
+            <strong>Settlement check paused.</strong>
+            <p className="muted small">
+              Automatic settlement checks are off. Resume watching to check the Base escrow again.
+            </p>
+            <button onClick={onWatch}>Watch for settlement</button>
+          </div>
+        )
       ) : used && payout ? (
-        <div className="notice ok">
+        <div className="notice ok" role="status">
           <strong>Paid out — {formatUsdc(payout.amount)} USDC settled on Base.</strong>
           <div className="txline">
             <span>
@@ -101,8 +175,18 @@ function VoucherDetail({
             </span>
           </div>
         </div>
+      ) : used && scanning ? (
+        <div className="notice warn">
+          <LoadingDots
+            label={
+              scan
+                ? `Settled — locating the payout transaction (${scan.scanned}/${scan.total} ranges)`
+                : "Settled — locating the payout transaction"
+            }
+          />
+        </div>
       ) : used ? (
-        <div className="notice ok">
+        <div className="notice ok" role="status">
           <strong>Settled on Base.</strong>
           <p className="muted small">
             The escrow marks this voucher used, but the payout transaction was not found in the
@@ -110,7 +194,8 @@ function VoucherDetail({
             <ExtLink href={baseAddressUrl(voucher.voucher.escrow)}>inspect the escrow ↗</ExtLink>{" "}
             or retry the scan.
           </p>
-          {!watching && <button onClick={onWatch}>Retry scan</button>}
+          {scanError && <p className="muted small">Last scan failed: {scanError}</p>}
+          {!watching && !scanning && <button onClick={onRetryScan}>Retry scan</button>}
         </div>
       ) : (
         <div className="notice warn">
@@ -123,6 +208,12 @@ function VoucherDetail({
             The relayer submits signed vouchers automatically. No action needed; the payout lands at
             the recipient above.
           </p>
+          {settleLate && (
+            <p className="muted small">
+              Still not settled after {settleLate} — no settlement observed. The relayer path may be
+              delayed or unavailable; chain reads are fine{watching ? " and this panel keeps watching" : ""}.
+            </p>
+          )}
           {!watching && <button onClick={onWatch}>Watch for settlement</button>}
         </div>
       )}
@@ -143,56 +234,53 @@ function V1Tracker({
   voucherTtlSec: number;
 }) {
   const [phase, setPhase] = useState<Phase>(
-    initialVoucher ? { kind: "voucher", voucher: initialVoucher, used: null, payout: null } : watch ? { kind: "waiting-voucher" } : { kind: "error", message: "No voucher has been signed for this bounty yet." }
+    initialVoucher
+      ? { kind: "voucher", voucher: initialVoucher, used: null, payout: null, settleStatus: "checking", settleError: null }
+      : watch
+        ? { kind: "waiting-voucher" }
+        : { kind: "error", message: "No voucher has been signed for this bounty yet." }
   );
   const [watching, setWatching] = useState(watch);
   const [scan, setScan] = useState<{ scanned: number; total: number } | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const busy = useRef(false);
+  const voucherRef = useRef<SignedVoucherView | null>(initialVoucher);
+  const voucherFailures = useRef(0);
+  const pollerRef = useRef<SettlePoller | null>(null);
+  const scannedRef = useRef<Set<string>>(new Set());
+  const scanningRef = useRef(false);
 
+  // Voucher wait: poll NEAR until the signed voucher appears. Transient
+  // fetch failures keep polling (same phase); only persistent failure
+  // surfaces the error phase with its manual retry.
   useEffect(() => {
     if (!watching) return;
+    let live = true;
     const tick = async () => {
-      // A payout-log scan can outlast the 15s interval: never overlap ticks.
       if (busy.current) return;
+      if (voucherRef.current) return; // voucher held: the poller owns settlement now
       busy.current = true;
-      setElapsed((e) => e + 1);
+      if (live) setElapsed((e) => e + 1);
       try {
         const v = await getVoucher(bountyId);
+        voucherFailures.current = 0;
+        if (!live) return;
         if (!v) {
           // Still signing (also recovers the panel if a retry follows an error).
           setPhase({ kind: "waiting-voucher" });
           return;
         }
-        let used: boolean | null = null;
-        let payout: PayoutTx | null = null;
-        try {
-          used = await isVoucherUsed(v.voucher.digest);
-          if (used) {
-            setScanning(true);
-            setScan(null);
-            try {
-              payout = await findPayoutTx(bountyId, {
-                claimTs: v.voucher.expiry - voucherTtlSec,
-                onProgress: (scanned, total) => setScan({ scanned, total }),
-              });
-            } finally {
-              setScanning(false);
-            }
-          }
-        } catch {
-          used = null; // escrow unreachable; keep the voucher, retry next tick
-        }
-        setPhase({ kind: "voucher", voucher: v, used, payout });
-        if (used) {
-          // Settled: stop auto-polling (a missing payout link has its own retry).
+        voucherRef.current = v;
+        setPhase({ kind: "voucher", voucher: v, used: null, payout: null, settleStatus: "checking", settleError: null });
+      } catch (e) {
+        voucherFailures.current += 1;
+        if (live && voucherFailures.current >= VOUCHER_FETCH_MAX_FAILURES) {
+          setPhase({ kind: "error", message: e instanceof Error ? e.message : String(e) });
           setWatching(false);
         }
-      } catch (e) {
-        setPhase({ kind: "error", message: e instanceof Error ? e.message : String(e) });
-        setWatching(false);
       } finally {
         busy.current = false;
       }
@@ -200,53 +288,102 @@ function V1Tracker({
     void tick();
     timer.current = setInterval(() => void tick(), 15000);
     return () => {
+      live = false;
       if (timer.current) clearInterval(timer.current);
       timer.current = null;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watching, bountyId]);
+
+  // Payout-log scan: one attempt per digest, then only via the manual
+  // retry. A failed scan keeps the confirmed used=true — it only leaves
+  // the payout link missing, never downgrades settlement to unknown.
+  const runPayoutScan = useCallback(
+    async (digest: string) => {
+      if (scanningRef.current || scannedRef.current.has(digest)) return;
+      scanningRef.current = true;
+      scannedRef.current.add(digest);
+      setScanning(true);
+      setScan(null);
+      setScanError(null);
+      try {
+        const v = voucherRef.current;
+        if (!v || v.voucher.digest !== digest) return;
+        const payout = await findPayoutTx(bountyId, {
+          claimTs: v.voucher.expiry - voucherTtlSec,
+          onProgress: (scanned: number, total: number) => setScan({ scanned, total }),
+        });
+        setPhase((p) => (p.kind === "voucher" && p.voucher.voucher.digest === digest ? { ...p, payout } : p));
+      } catch (e) {
+        setScanError(e instanceof Error ? e.message : String(e));
+      } finally {
+        scanningRef.current = false;
+        setScanning(false);
+      }
+    },
+    [bountyId, voucherTtlSec]
+  );
 
   const signedDigest = phase.kind === "voucher" ? phase.voucher.voucher.digest : null;
 
-  // Resolve settlement for an already-signed voucher exactly once.
+  // Settlement check: the poller retries unknown reads with bounded
+  // backoff, ignores stale settlements, and stops itself (timer cancelled,
+  // late updates dropped) on unmount or when watching pauses.
   useEffect(() => {
-    if (phase.kind !== "voucher" || phase.used !== null || !watch) return;
-    let live = true;
-    (async () => {
-      try {
-        const used = await isVoucherUsed(phase.voucher.voucher.digest);
-        let payout: PayoutTx | null = null;
-        if (used) {
-          setScanning(true);
-          setScan(null);
-          try {
-            payout = await findPayoutTx(bountyId, {
-              claimTs: phase.voucher.voucher.expiry - voucherTtlSec,
-              onProgress: (scanned, total) => setScan({ scanned, total }),
-            });
-          } finally {
-            setScanning(false);
-          }
+    if (!signedDigest || !watching) return;
+    const digest = signedDigest;
+    const poller: SettlePoller = createSettlePoller({
+      read: () => isVoucherUsed(digest),
+      baseMs: 15000,
+      onState: (s: SettleSnapshot) => {
+        if (s.status === "settled") {
+          setPhase((p) =>
+            p.kind === "voucher" && p.voucher.voucher.digest === digest
+              ? { ...p, used: true, settleStatus: "settled", settleError: null }
+              : p
+          );
+          // Settled: stop auto-polling (a missing payout link has its own retry).
+          setWatching(false);
+          void runPayoutScan(digest);
+        } else if (s.status === "not-settled") {
+          setPhase((p) =>
+            p.kind === "voucher" && p.voucher.voucher.digest === digest
+              ? { ...p, used: false, settleStatus: "not-settled", settleError: null }
+              : p
+          );
+        } else if (s.status === "unavailable" || s.status === "failed") {
+          setPhase((p) =>
+            p.kind === "voucher" && p.voucher.voucher.digest === digest
+              ? { ...p, used: null, settleStatus: s.status, settleError: s.error }
+              : p
+          );
+        } else {
+          setPhase((p) =>
+            p.kind === "voucher" && p.voucher.voucher.digest === digest
+              ? { ...p, settleStatus: "checking", settleError: s.error }
+              : p
+          );
         }
-        if (live) setPhase({ kind: "voucher", voucher: phase.voucher, used, payout });
-      } catch {
-        if (live) setPhase({ kind: "voucher", voucher: phase.voucher, used: null, payout: null });
-      }
-    })();
+      },
+    });
+    pollerRef.current = poller;
+    poller.start();
     return () => {
-      live = false;
+      poller.stop();
+      if (pollerRef.current === poller) pollerRef.current = null;
     };
+    // Intentional: the poller must not restart when the scan callback identity changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [signedDigest]);
+  }, [signedDigest, watching]);
 
   if (phase.kind === "error") {
     return (
-      <div className="notice error">
+      <div className="notice error" role="alert">
         {phase.message}
         <div className="row" style={{ marginTop: 8 }}>
           <button
             onClick={() => {
               setElapsed(0);
+              voucherFailures.current = 0;
               setWatching(true);
             }}
           >
@@ -271,7 +408,7 @@ function V1Tracker({
     );
   }
 
-  const { voucher, used, payout } = phase;
+  const { voucher, used, payout, settleStatus, settleError } = phase;
   return (
     <VoucherDetail
       bountyId={bountyId}
@@ -281,8 +418,16 @@ function V1Tracker({
       watching={watching}
       scanning={scanning}
       scan={scan}
+      scanError={scanError}
+      settleStatus={settleStatus}
+      settleError={settleError}
       voucherTtlSec={voucherTtlSec}
       onWatch={() => setWatching(true)}
+      onRetryScan={() => {
+        scannedRef.current.delete(voucher.voucher.digest);
+        void runPayoutScan(voucher.voucher.digest);
+      }}
+      onRetrySettle={() => pollerRef.current?.retry()}
     />
   );
 }
@@ -314,13 +459,20 @@ function V3Tracker({
   const [watching, setWatching] = useState(true);
   const [scan, setScan] = useState<{ scanned: number; total: number } | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [settleStatus, setSettleStatus] = useState<SettleStatus>("checking");
+  const [settleError, setSettleError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const busy = useRef(false);
   const slotRef = useRef<number | null>(null);
+  const pollerRef = useRef<SettlePoller | null>(null);
+  const scannedRef = useRef<Set<string>>(new Set());
+  const scanningRef = useRef(false);
 
   useEffect(() => {
     if (!watching) return;
+    let live = true;
     const tick = async () => {
       if (busy.current) return;
       busy.current = true;
@@ -347,41 +499,22 @@ function V3Tracker({
           }
           if (s !== null) {
             slotRef.current = s;
-            setSlot(s);
+            if (live) setSlot(s);
           }
         }
+        // Every chain read degrades to null on transport failure, so a
+        // transient RPC blip surfaces as "not yet" and recovers next tick —
+        // polling here never stops on error (settlement has its own poller
+        // below with bounded backoff and explicit unavailable/failed states).
         const c = s !== null ? await getClaim(bountyId, s).catch(() => null) : null;
-        setClaim(c);
+        if (live) setClaim(c);
         const v = s !== null ? await getVoucherV3(bountyId, s).catch(() => null) : null;
-        setVoucher(v);
-        const derived = derivePhase({ claim: c, voucher: v, used });
-        setWaitSec(derived.phase === "qualified" ? derived.waitSec ?? null : null);
-        if (v) {
-          try {
-            const u = await isVoucherUsed(v.voucher.digest);
-            setUsed(u);
-            if (u) {
-              setScanning(true);
-              setScan(null);
-              try {
-                setPayout(
-                  await findPayoutTx(bountyId, {
-                    claimTs: v.voucher.expiry - voucherTtlSec,
-                    onProgress: (scanned, total) => setScan({ scanned, total }),
-                  })
-                );
-              } finally {
-                setScanning(false);
-              }
-              setWatching(false);
-            }
-          } catch {
-            setUsed(null);
-          }
-        }
-        setError(null);
+        if (live) setVoucher(v);
+        const derived = derivePhase({ claim: c, voucher: v, used: null });
+        if (live) setWaitSec(derived.phase === "qualified" ? derived.waitSec ?? null : null);
+        if (live) setError(null);
       } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
+        if (live) setError(e instanceof Error ? e.message : String(e));
       } finally {
         busy.current = false;
       }
@@ -389,14 +522,102 @@ function V3Tracker({
     void tick();
     timer.current = setInterval(() => void tick(), 10000);
     return () => {
+      live = false;
       if (timer.current) clearInterval(timer.current);
       timer.current = null;
     };
+    // Intentional: the interval must not restart on prop identity churn (slots is an array).
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watching, bountyId]);
 
+  // Payout-log scan: one attempt per digest, then only via the manual
+  // retry. A failed scan keeps the confirmed used=true — it only leaves
+  // the payout link missing, never downgrades settlement to unknown.
+  const runPayoutScan = useCallback(
+    async (target: SignedVoucherViewV2) => {
+      const digest = target.voucher.digest;
+      if (scanningRef.current || scannedRef.current.has(digest)) return;
+      scanningRef.current = true;
+      scannedRef.current.add(digest);
+      setScanning(true);
+      setScan(null);
+      setScanError(null);
+      try {
+        const payout = await findPayoutTx(bountyId, {
+          claimTs: target.voucher.expiry - voucherTtlSec,
+          onProgress: (scanned: number, total: number) => setScan({ scanned, total }),
+        });
+        setPayout(payout);
+        setError(null);
+      } catch (e) {
+        setScanError(e instanceof Error ? e.message : String(e));
+      } finally {
+        scanningRef.current = false;
+        setScanning(false);
+      }
+    },
+    [bountyId, voucherTtlSec]
+  );
+
+  const voucherDigest = voucher ? voucher.voucher.digest : null;
+
+  // Settlement check: same lifecycle as the V1 tracker — bounded backoff
+  // on unknown reads, stale settlements ignored, timer cancelled and
+  // late updates dropped on unmount or when watching pauses.
+  useEffect(() => {
+    if (!voucher || !watching) return;
+    const target = voucher;
+    const poller: SettlePoller = createSettlePoller({
+      read: () => isVoucherUsed(target.voucher.digest),
+      baseMs: 10000,
+      onState: (s: SettleSnapshot) => {
+        if (s.status === "settled") {
+          setUsed(true);
+          setSettleStatus("settled");
+          setSettleError(null);
+          // Settled: stop auto-polling (a missing payout link has its own retry).
+          setWatching(false);
+          void runPayoutScan(target);
+        } else if (s.status === "not-settled") {
+          setUsed(false);
+          setSettleStatus("not-settled");
+          setSettleError(null);
+        } else if (s.status === "unavailable" || s.status === "failed") {
+          setUsed(null);
+          setSettleStatus(s.status);
+          setSettleError(s.error);
+        } else {
+          setSettleStatus("checking");
+          setSettleError(s.error);
+        }
+      },
+    });
+    pollerRef.current = poller;
+    poller.start();
+    return () => {
+      poller.stop();
+      if (pollerRef.current === poller) pollerRef.current = null;
+    };
+    // Intentional: the poller keys off the digest string, not voucher/scan-callback identity.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [voucherDigest, watching]);
+
   const derived = derivePhase({ claim, voucher, used });
   const stepIdx = V3_STEPS.indexOf(derived.phase as (typeof V3_STEPS)[number]);
+  // Evidence-based pipeline status: overdue alarms only when our reads
+  // are healthy (error === null), so RPC failures never read as relayer
+  // delays — those stay on the P1-10 unknown/unavailable path.
+  const pipeNowSec = Math.floor(Date.now() / 1000);
+  const pipe = relayerPipelineStatus({
+    phase: derived.phase,
+    claim,
+    used,
+    readsOk: error === null,
+    nowSec: pipeNowSec,
+  }) as { status: string; stage?: string; sinceSec?: number };
+  const finalizeWaited = formatWaitDuration(
+    stageElapsedSec(maturedAtSec(claim), pipeNowSec)
+  ) as string;
 
   return (
     <div>
@@ -412,7 +633,11 @@ function V3Tracker({
         ))}
         {slot !== null && <span> (slot {slot})</span>}
       </p>
-      {error && <div className="notice error">{error}</div>}
+      {error && (
+        <div className="notice error" role="alert">
+          {error}
+        </div>
+      )}
       {derived.phase === "qualifying" && (
         <div className="notice warn">
           <LoadingDots label="Waiting for qualification to confirm on NEAR" />
@@ -422,17 +647,29 @@ function V3Tracker({
         <div className="notice warn">
           <LoadingDots label={`Qualified — challenge window ends in ${waitSec ?? "?"}s`} />
           <p className="muted small">
-            The relayer submits finalization automatically once the window elapses. No action needed.
+            No action needed — matured claims are picked up for finalization automatically.
           </p>
         </div>
       )}
       {derived.phase === "finalizing" && (
         <div className="notice warn">
-          <LoadingDots label="Matured — the relayer is submitting finalization" />
-          <p className="muted small">
-            The claim is eligible; the relayer&apos;s next poll (≤30s) dispatches the MPC signing
-            round. No action needed.
-          </p>
+          {pipe.status === "delayed" ? (
+            <>
+              <LoadingDots label={`Matured — finalization delayed (${finalizeWaited})`} />
+              <p className="muted small">
+                No finalization observed {finalizeWaited} past maturity. The finalization path may be
+                delayed or unavailable; chain reads are fine and this panel keeps watching — no
+                action needed.
+              </p>
+            </>
+          ) : (
+            <>
+              <LoadingDots label={`Matured — waiting for finalization (${finalizeWaited})`} />
+              <p className="muted small">
+                The claim is eligible; matured claims are picked up automatically. No action needed.
+              </p>
+            </>
+          )}
         </div>
       )}
       {derived.phase === "signing" && (
@@ -453,8 +690,16 @@ function V3Tracker({
           watching={watching}
           scanning={scanning}
           scan={scan}
+          scanError={scanError}
+          settleStatus={settleStatus}
+          settleError={settleError}
           voucherTtlSec={voucherTtlSec}
           onWatch={() => setWatching(true)}
+          onRetryScan={() => {
+            scannedRef.current.delete(voucher.voucher.digest);
+            void runPayoutScan(voucher);
+          }}
+          onRetrySettle={() => pollerRef.current?.retry()}
         />
       )}
       {(derived.phase === "settling") && !voucher && (

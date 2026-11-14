@@ -1,6 +1,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+  mergeVerifiedCriteria,
   parseClaimBundle,
   prProofOf,
   proofsOf,
@@ -92,6 +93,36 @@ describe("parseClaimBundle", () => {
   it("proofsOf filters by evidence kind", async () => {
     assert.equal(proofsOf(BUNDLE(), 7).length, 1);
     assert.equal(proofsOf(BUNDLE(), 2).length, 0);
+  });
+});
+
+describe("mergeVerifiedCriteria (P0-4)", () => {
+  const VERIFIED = '{"repo":"o/r"}';
+  const proofsOnly = JSON.stringify({ proofs: [{ evidence_type: 1, proof: rawProof(PR_EX) }] });
+
+  it("injects verified criteria into a proofs-only bundle", async () => {
+    const merged = mergeVerifiedCriteria(proofsOnly, VERIFIED);
+    assert.deepEqual(JSON.parse(merged), {
+      proofs: [{ evidence_type: 1, proof: rawProof(PR_EX) }],
+      criteria_json: { repo: "o/r" },
+    });
+    // The merged text parses as a complete bundle.
+    assert.equal(parseClaimBundle(merged).ok, true);
+  });
+
+  it("leaves explicitly pasted criteria untouched", async () => {
+    const full = JSON.stringify({ criteria_json: { repo: "x/y" }, proofs: [] });
+    assert.equal(mergeVerifiedCriteria(full, VERIFIED), full);
+    const camel = JSON.stringify({ criteriaJson: { repo: "x/y" }, proofs: [] });
+    assert.equal(mergeVerifiedCriteria(camel, VERIFIED), camel);
+  });
+
+  it("passes through unchanged without verified criteria or on unparseable input", async () => {
+    assert.equal(mergeVerifiedCriteria(proofsOnly, null), proofsOnly);
+    assert.equal(mergeVerifiedCriteria(proofsOnly, ""), proofsOnly);
+    assert.equal(mergeVerifiedCriteria("nope", VERIFIED), "nope");
+    assert.equal(mergeVerifiedCriteria("[]", VERIFIED), "[]");
+    assert.equal(mergeVerifiedCriteria(proofsOnly, "{bad"), proofsOnly);
   });
 });
 
@@ -281,6 +312,46 @@ describe("submitWithPreflight (M2)", () => {
     });
     assert.equal(r.ok, false);
     assert.match(r.errors.join(";"), /user rejected/);
+  });
+
+  it("fails receipts whose outcome reports execution failure, keeping the hash", async () => {
+    const r = await submitWithPreflight({
+      args: ARGS,
+      dryCall: async () => DRY_OK,
+      signCall: async () => ({
+        txHash: "Hfail",
+        outcome: {
+          status: { Failure: { error_message: "Smart contract panicked: NoOpenSlot(7)" } },
+          transaction: { hash: "Hfail" },
+        },
+      }),
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.txHash, "Hfail");
+    assert.match(r.errors.join(";"), /NoOpenSlot/);
+  });
+
+  it("accepts receipts whose outcome reports success", async () => {
+    const r = await submitWithPreflight({
+      args: ARGS,
+      dryCall: async () => DRY_OK,
+      signCall: async () => ({
+        txHash: "Hok",
+        outcome: { status: { SuccessValue: "e30=" }, transaction: { hash: "Hok" } },
+      }),
+    });
+    assert.equal(r.ok, true);
+    assert.equal(r.receipt.txHash, "Hok");
+  });
+
+  it("preserves hashes carried by thrown failures", async () => {
+    const r = await submitWithPreflight({
+      args: ARGS,
+      dryCall: async () => DRY_OK,
+      signCall: async () => { throw Object.assign(new Error("NEAR transaction failed: x"), { txHash: "Hthrown" }); },
+    });
+    assert.equal(r.ok, false);
+    assert.equal(r.txHash, "Hthrown");
   });
 });
 

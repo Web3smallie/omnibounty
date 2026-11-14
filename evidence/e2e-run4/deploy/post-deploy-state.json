@@ -1,0 +1,97 @@
+{
+  "config": {
+    "owner": "omnibounty-v3.testnet",
+    "pending_owner": null,
+    "paused": false,
+    "mpc_contract": "v1.signer-prod.testnet",
+    "mpc_signer": "0x4b204ae1890a0cd49cc594fe712fea4ac765a2f9",
+    "escrow": "0x63391c272a49c30f79eb6c3d8e10f0652bb0f767",
+    "chain_id": 84532,
+    "voucher_path": "omnibounty-voucher-v2",
+    "domain_id": 0,
+    "max_proof_age_sec": 604800,
+    "future_skew_sec": 300,
+    "voucher_ttl_sec": 86400,
+    "pending_timeout_sec": 21600,
+    "next_nonce": 1,
+    "bounty_count": 1
+  },
+  "bounty": {
+    "id": 223339065907689,
+    "sponsor": "omnibounty-v3.testnet",
+    "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+    "criteria_hash": "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+    "slots": [
+      "1000000"
+    ],
+    "slots_filled": 1,
+    "total_amount": "1000000",
+    "funded": true,
+    "deadline": 0,
+    "challenge_window": 0,
+    "created_at": 1794563638,
+    "seq": 1,
+    "status": "funded"
+  },
+  "claim": {
+    "bounty_id": 223339065907689,
+    "slot": 0,
+    "recipient": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "pr_number": 1,
+    "head_sha": "0xc77fd6e302ac228318ff68807bccdbe8835d5452",
+    "github_created": 1794567788,
+    "claim_seq": 0,
+    "qualified_at": 1794595834,
+    "challenge_ends_at": 1794595834,
+    "status": "finalized",
+    "pending_digest": null,
+    "signed": true
+  },
+  "voucher": {
+    "voucher": {
+      "bounty_id": 223339065907689,
+      "slot_index": 0,
+      "recipient": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+      "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+      "amount": "1000000",
+      "nonce": 0,
+      "expiry": 1794682288,
+      "chain_id": 84532,
+      "escrow": "0x63391c272a49c30f79eb6c3d8e10f0652bb0f767",
+      "criteria_hash": "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+      "digest": "0x994e4cc763e2013317c11339237e4f3022417e33a4fc1d2a9fbecf561640c2de"
+    },
+    "v": 28,
+    "r": "0xd131ae60f14654908eac81a764a5623f73b42c07b5f31a54b57d5716f6ee06eb",
+    "s": "0x66f4daccd36431cd6bada0706f7b620b5206040ef3fcd4873bb7f59edcdbb5f9"
+  },
+  "epoch": {
+    "epoch_id": 1,
+    "witnesses": [
+      "0x244897572368eadf65bfbc5aec98d8e5443a9072"
+    ]
+  },
+  "unrelayed": [
+    {
+      "bounty_id": 223339065907689,
+      "slot": 0,
+      "digest": "0x994e4cc763e2013317c11339237e4f3022417e33a4fc1d2a9fbecf561640c2de",
+      "voucher": {
+        "bounty_id": 223339065907689,
+        "slot_index": 0,
+        "recipient": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+        "token": "0x036cbd53842c5426634e7929541ec2318f3dcf7e",
+        "amount": "1000000",
+        "nonce": 0,
+        "expiry": 1794682288,
+        "chain_id": 84532,
+        "escrow": "0x63391c272a49c30f79eb6c3d8e10f0652bb0f767",
+        "criteria_hash": "0x499fc4d32bc3bc91a8cab81785c6fb59e7073c3f769e2b03399b68bdcd7e95b6",
+        "digest": "0x994e4cc763e2013317c11339237e4f3022417e33a4fc1d2a9fbecf561640c2de"
+      },
+      "v": 28,
+      "r": "0xd131ae60f14654908eac81a764a5623f73b42c07b5f31a54b57d5716f6ee06eb",
+      "s": "0x66f4daccd36431cd6bada0706f7b620b5206040ef3fcd4873bb7f59edcdbb5f9"
+    }
+  ]
+}

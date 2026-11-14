@@ -2,10 +2,14 @@
 
 import { useWallets } from "./wallets";
 import { shortenAddress } from "../lib/display.mjs";
+import { shouldShowNearInitError } from "../lib/walletInit.mjs";
 
 export default function WalletControls() {
   const {
     nearReady,
+    nearStatus,
+    nearError,
+    retryNear,
     nearAccount,
     connectNear,
     disconnectNear,
@@ -23,8 +27,21 @@ export default function WalletControls() {
         <span className="wallet-chip wallet-chip-on" title={`NEAR account ${nearAccount}`}>
           <span className="dot dot-on" aria-hidden="true" />
           <code>{nearAccount}</code>
-          <button className="linklike" onClick={disconnectNear} title="Disconnect NEAR wallet">
-            ×
+          <button
+            className="linklike"
+            onClick={disconnectNear}
+            title="Disconnect NEAR wallet"
+            aria-label="Disconnect NEAR wallet"
+          >
+            <span aria-hidden="true">×</span>
+          </button>
+        </span>
+      ) : shouldShowNearInitError(nearStatus, nearAccount) ? (
+        <span className="wallet-chip wallet-chip-warn" title={nearError ?? "NEAR wallet setup failed"} role="alert">
+          <span className="dot dot-warn" aria-hidden="true" />
+          <span>NEAR setup failed</span>
+          <button className="linklike" onClick={retryNear} title="Retry NEAR wallet setup">
+            Retry
           </button>
         </span>
       ) : (
@@ -50,7 +67,11 @@ export default function WalletControls() {
           {evmReady ? "Connect EVM" : "No EVM wallet"}
         </button>
       )}
-      {evmError && <span className="wallet-error">{evmError}</span>}
+      {evmError && (
+        <span className="wallet-error" role="alert">
+          {evmError}
+        </span>
+      )}
     </div>
   );
 }

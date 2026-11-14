@@ -27,8 +27,23 @@ const KEY_FILE = process.env.NEAR_KEY_FILE || join(ROOT, "secrets", "v3-operator
 const PAGE = 100; // == NEAR MAX_LIST_LIMIT
 const BATCH_ROUNDS = 8; // <=2 min polling per claim; leftovers retry next tick
 
-// Eligible = unsigned + challenge-expired. Malformed entries are skipped
-// (fail-closed); a failed page fetch throws and fails the run loudly.
+// The zero digest can never be in flight (dispatch always stores a real
+// keccak digest); it is excluded explicitly so the skip rule below reads
+// exactly as specified: non-zero means dispatched, zero means not.
+const ZERO_DIGEST = `0x${"00".repeat(32)}`;
+
+// In-flight check, mirroring the relayer (relayer/src/index.mjs
+// discoverMaturedClaims): any present non-zero pending_digest means an MPC
+// round is live for this slot. Missing (null/undefined) means no dispatch
+// (forward-compatible with older view shapes).
+function hasPendingDispatch(claim) {
+  const d = claim.pending_digest;
+  return d !== null && d !== undefined && d !== ZERO_DIGEST;
+}
+
+// Eligible = unsigned + challenge-expired + no pending dispatch.
+// Malformed entries are skipped (fail-closed); a failed page fetch throws
+// and fails the run loudly.
 export async function discoverMatured(account, contractId, nowSec) {
   const out = [];
   let from = 0;
@@ -50,6 +65,7 @@ export async function discoverMatured(account, contractId, nowSec) {
         });
         if (!claim) continue;
         if (claim.signed === true) continue;
+        if (hasPendingDispatch(claim)) continue;
         if (typeof claim.challenge_ends_at !== "number") continue;
         if (nowSec < claim.challenge_ends_at) continue;
         out.push({ bountyId: b.id, slot, claim });

@@ -39,9 +39,10 @@ retained for history only.
 | `testdata/v3` | V3 fixtures, deployment records, oracle vectors |
 | `tools` | V3 finalizers, MPC derivation, fixture generators |
 | `docs/v3` | V3 design, security, finalization, deployment notes |
-| `docs` | Shared architecture, security, deployment, verification docs |
+| `docs` | Shared architecture, security, and deployment docs |
 | `contracts/near`, `contracts/base` | Legacy V1/V2 contracts (historical) |
-| `spikes`, `experiments` | Research scripts (diagnostics, not production code) |
+| `experiments` | V3 research records + fixture regen scripts (diagnostics, not production code) |
+| `evidence/e2e-run4` | Published E2E #4 run record, proofs, deployment bytes, checksums |
 
 ## Quick verification (reviewers)
 
@@ -49,9 +50,9 @@ retained for history only.
 cd contracts/near-v3 && cargo test --lib              # NEAR unit suite (133 tests)
 cargo test --features xsuite --test xsuite            # + sandbox suite (6 tests, needs built WASM)
 cd ../base-v3 && forge test                            # escrow suite (26 tests)
-cd ../../relayer && npm install && npm test            # relayer suite (82 tests)
-cd ../tools && npm install && npm test                 # finalizer suites (21 tests)
-cd ../frontend && npm install && npm test              # frontend suite (97 tests)
+cd ../../relayer && npm install && npm test            # relayer suite (87 tests)
+cd ../tools && npm install && npm test                 # tools suites (37 tests)
+cd ../frontend && npm install && npm test              # frontend suite (440 tests)
 cd ../integration && npm ci && npm run e2e:prepare && npm run e2e   # E2E scenarios (7)
 ```
 
@@ -103,12 +104,13 @@ record): NEAR `omnibounty-v3.testnet`, Base Sepolia escrow
 
 Demonstrated: all suites above; both testnet deployments; live Reclaim PR
 and identity attestations verified individually against the epoch-1 witness;
-a funded $1 demo bounty (ID `223339065907689`, zero challenge window).
-Pending: a completed live claim → MPC signing → USDC payout, which needs a
-merged PR by the claimant. The demo bounty is self-funded and self-claimed
-by the same operator; this does not demonstrate independent
-sponsor–contributor participation. No production-readiness claim is made:
-single-key testnet owner/signer, manual deployment, no monitoring.
+a funded $1 demo bounty (ID `223339065907689`, zero challenge window); and
+a completed live claim → MPC signing → USDC payout on bounty
+`223339065907692` (E2E #4, see `evidence/e2e-run4/E2E-RUN4.md`). The demo
+bounties are self-funded and self-claimed by the same operator; this does
+not demonstrate independent sponsor–contributor participation. No
+production-readiness claim is made: single-key testnet owner/signer,
+manual deployment, no monitoring.
 
 ## Documentation index
 
@@ -118,6 +120,5 @@ single-key testnet owner/signer, manual deployment, no monitoring.
 - `docs/v3/SECURITY_MODEL.md` — V3 threat model
 - `docs/DEPLOYMENT.md` — deployment procedures
 - `docs/ARCHITECTURE.md`, `docs/SECURITY.md` — shared background (V1-era)
-- `docs/VERIFICATION.md` — historical V1 evidence log (see scope note there)
 - `contracts/near-v3/tests/README.md` — WASM build + XSuite guide
 - `frontend/README.md` — app setup, V3 demo flow, proof scripts

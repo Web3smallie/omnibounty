@@ -1,0 +1,30 @@
+{
+  "claimData": {
+    "provider": "http",
+    "parameters": "{\"body\":\"\",\"headers\":{\"Accept\":\"application/vnd.github+json\",\"User-Agent\":\"omnibounty-prove/1.0\"},\"method\":\"GET\",\"responseMatches\":[{\"type\":\"regex\",\"value\":\"\\\"merged\\\":(?<merged>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"login\\\":\\\"(?<author>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"full_name\\\":\\\"(?<repo>.*?)\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"number\\\":(?<number>.*?)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"sha\\\":\\\"(?<head_sha>[0-9a-f]{40})\\\"\"},{\"type\":\"regex\",\"value\":\"\\\"user\\\":\\\\{[^}]*?\\\"id\\\":(?<author_id>[0-9]+)[,}]\"},{\"type\":\"regex\",\"value\":\"\\\"created_at\\\":\\\"(?<pr_created>[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z)\\\"\"}],\"responseRedactions\":[],\"url\":\"https://api.github.com/repos/Web3smallie/omnibounty/pulls/1\"}",
+    "owner": "0xaa77daf4a174b3d05d6046462a7cb0e8eb9fa426",
+    "timestampS": 1794603118,
+    "context": "{\"extractedParameters\":{\"author\":\"Web3smallie\",\"author_id\":\"130228599\",\"head_sha\":\"c77fd6e302ac228318ff68807bccdbe8835d5452\",\"merged\":\"true\",\"number\":\"1\",\"pr_created\":\"2026-11-13T11:03:08Z\",\"repo\":\"Web3smallie/omnibounty\"},\"providerHash\":\"0xa6ba0e5f9782588916e863f37ff16bbc1502d154cabd9e305898e7890a3ff65a\"}",
+    "identifier": "0xcd386065bb8c3ed74266674ed1c26fd21fe0497a7ca494aea3a142c1b1faeb32",
+    "epoch": 1
+  },
+  "identifier": "0xcd386065bb8c3ed74266674ed1c26fd21fe0497a7ca494aea3a142c1b1faeb32",
+  "signatures": [
+    "0x3875c46fc32a787225c2956478569ddf37fcce52c4008fa13dfdf1e886927d6006f15c7f8a69ca1de94bc3e91324090f959fc916314eb4d46533f01a2175ee4d1b"
+  ],
+  "extractedParameterValues": {
+    "author": "Web3smallie",
+    "author_id": "130228599",
+    "head_sha": "c77fd6e302ac228318ff68807bccdbe8835d5452",
+    "merged": "true",
+    "number": "1",
+    "pr_created": "2026-11-13T11:03:08Z",
+    "repo": "Web3smallie/omnibounty"
+  },
+  "witnesses": [
+    {
+      "id": "0x244897572368eadf65bfbc5aec98d8e5443a9072",
+      "url": "wss://attestor.reclaimprotocol.org:444/ws"
+    }
+  ]
+}

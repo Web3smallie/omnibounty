@@ -1,8 +1,9 @@
 import { getConfig, listBounties } from "../lib/near";
+import { escrowV2PaidTotal } from "../lib/base";
 import { config } from "../lib/config";
 import Marketplace from "../components/Marketplace";
 import { ExtLink } from "../components/ui";
-import { baseAddressUrl, formatUsdc, nearAccountUrl, shortenAddress } from "../lib/display.mjs";
+import { aggregateV3Paid, baseAddressUrl, claimedAmountsTotal, formatUsdc, nearAccountUrl, shortenAddress } from "../lib/display.mjs";
 
 export const dynamic = "force-dynamic";
 
@@ -24,22 +25,26 @@ export default async function Home() {
   }
 
   const open = bounties?.filter((b) => b.status === "open").length ?? 0;
-  const paidOut =
-    bounties
-      ?.filter((b) => b.status === "claimed")
-      .reduce((sum, b) => sum + BigInt(b.amount), 0n) ?? 0n;
+  // Safe on mixed V1/V3 lists: V3 records carry total_amount (not the
+  // claimed part) and non-"claimed" statuses, and malformed amounts are
+  // skipped instead of throwing outside the load try/catch above.
+  const paidOutV1 = claimedAmountsTotal(bounties ?? []);
+  // V3: only escrow-settled slots count (claimedBitmap bits set atomically
+  // with the USDC transfer). Failed reads flag `incomplete` so the page
+  // warns instead of silently understating the total.
+  const v3 = await aggregateV3Paid(bounties ?? [], (id: number) => escrowV2PaidTotal(id));
+  const paidOut = paidOutV1 + v3.total;
 
   return (
     <>
       <section className="hero">
         <div className="hero-copy">
-          <h1>
-            Get paid in USDC for <em>merged</em> pull requests.
-          </h1>
+          <h1>Verifiable work. Deterministic rewards. Cross-chain settlement.</h1>
           <p className="lede">
-            Sponsors fund bounties on Base Sepolia. Contributors prove the merge with Reclaim
-            zkTLS, a NEAR contract verifies the proof, and an MPC-signed voucher releases the
-            payout — no judges, no manual review.
+            NEAR-based cross-chain bounties. Sponsors commit cryptographic acceptance criteria on
+            NEAR and fund USDC rewards on Base. Contributors prove their GitHub identity and merged
+            pull requests using Reclaim zkTLS. NEAR verifies each claim, an MPC signer authorizes
+            the payout, and the Base escrow independently verifies and settles the reward.
           </p>
         </div>
         <div className="journeys">
@@ -82,6 +87,11 @@ export default async function Home() {
               <span className="stat-label">USDC claimed by contributors</span>
             </div>
           </section>
+          {v3.incomplete ? (
+            <div className="notice warn">
+              Some V3 payout data is temporarily unavailable; the claimed total may be understated.
+            </div>
+          ) : null}
           <Marketplace bounties={bounties!} />
         </>
       )}

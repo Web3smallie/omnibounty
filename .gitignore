@@ -14,6 +14,7 @@ frontend/.next/
 frontend/out/
 relayer/relayer-state.json
 relayer/test/.tmp/
+**/*.tsbuildinfo
 
 # Rust
 contracts/near/target/

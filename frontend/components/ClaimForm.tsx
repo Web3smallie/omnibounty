@@ -1,14 +1,17 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { extractProofFacts, validateProofShape } from "../lib/validation.mjs";
-import { dryRun, getSelector, signAndSend } from "../lib/near";
+import { createBusyGuard, createSubmitGuard } from "../lib/submitGuard.mjs";
+import { dryRun, getBounty, getSelector, signAndSend } from "../lib/near";
 import type { SignedVoucherView } from "../lib/near";
 import { config } from "../lib/config";
 import { useWallets } from "./wallets";
 import { ExtLink, LoadingDots } from "./ui";
 import SettlementPanel from "./SettlementPanel";
-import { nearTxUrl, shortenAddress } from "../lib/display.mjs";
+import ErrorBoundary from "./ErrorBoundary";
+import { nearTxUrl, shortenAddress, thrownTxHash } from "../lib/display.mjs";
+import { shouldShowNearInitError } from "../lib/walletInit.mjs";
 
 interface ProofFacts {
   merged: string;
@@ -29,7 +32,7 @@ export default function ClaimForm({
   bountyPrNumber: number;
   bountyExpired: boolean;
 }) {
-  const { nearAccount, connectNear } = useWallets();
+  const { nearAccount, connectNear, nearStatus, nearError, retryNear } = useWallets();
   const [proofText, setProofText] = useState("");
   const [recipient, setRecipient] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -41,6 +44,19 @@ export default function ClaimForm({
   const [busyClaim, setBusyClaim] = useState(false);
   const [claimTx, setClaimTx] = useState<string | null>(null);
   const [claimed, setClaimed] = useState(false);
+  const [failedTx, setFailedTx] = useState<string | null>(null);
+  const [alreadyClaimed, setAlreadyClaimed] = useState(false);
+  const busyClaimRef = useRef(createBusyGuard());
+  const mountedRef = useRef(true);
+  const liveWallets = useRef({ nearAccount });
+  liveWallets.current.nearAccount = nearAccount;
+
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
 
   function analyze(): { proof: unknown; facts: ProofFacts } | null {
     setErrors([]);
@@ -100,13 +116,11 @@ export default function ClaimForm({
   }
 
   async function runClaim() {
-    setErrors([]);
-    setDryError(null);
-    if (!normalized || !facts) {
-      setErrors(["Analyze a valid proof first."]);
-      return;
-    }
-    if (recipient.trim().toLowerCase() !== facts.owner.toLowerCase()) {
+    // Fresh analysis at submit time: the textarea may have changed since
+    // the last dry-run, and a stale proof must never be submitted.
+    const a = analyze();
+    if (!a) return;
+    if (recipient.trim().toLowerCase() !== a.facts.owner.toLowerCase()) {
       setErrors(["Recipient must exactly equal the proof owner — the payout can only go to the prover."]);
       return;
     }
@@ -114,27 +128,48 @@ export default function ClaimForm({
       setErrors(["Connect your NEAR wallet first — the claim is submitted from that account."]);
       return;
     }
+    if (!busyClaimRef.current.tryAcquire()) return; // double-click: a submission is already running
+    const guard = createSubmitGuard({ bountyId, nearAccount });
     setBusyClaim(true);
+    setFailedTx(null);
     try {
+      // Lost-receipt recovery: if the bounty already carries a claim (a
+      // previous submission landed), track it instead of resubmitting. A
+      // failing read fails open — the contract still rejects duplicates.
+      try {
+        const live = await getBounty(bountyId);
+        if (live && live.status !== "open") {
+          if (mountedRef.current) setAlreadyClaimed(true);
+          return;
+        }
+      } catch {
+        // Proceed: the pre-submit check is best-effort only.
+      }
       const selector = await getSelector();
+      if (!mountedRef.current) return;
+      guard.assertUnchanged({ bountyId, nearAccount: liveWallets.current.nearAccount });
       const receipt = await signAndSend(selector, "claim", {
         bounty_id: bountyId,
-        proof: normalized,
+        proof: a.proof,
         recipient: recipient.trim(),
       });
+      if (!mountedRef.current) return;
       setClaimTx(receipt.txHash);
       setClaimed(true);
     } catch (e) {
+      if (!mountedRef.current) return;
       setErrors([e instanceof Error ? e.message : String(e)]);
+      setFailedTx(thrownTxHash(e));
     } finally {
-      setBusyClaim(false);
+      busyClaimRef.current.release();
+      if (mountedRef.current) setBusyClaim(false);
     }
   }
 
   if (claimed) {
     return (
       <div>
-        <div className="notice ok">
+        <div className="notice ok" role="status">
           <strong>Claim submitted on NEAR.</strong>{" "}
           {claimTx ? (
             <span>
@@ -147,7 +182,25 @@ export default function ClaimForm({
             <span className="muted small">(wallet did not return a transaction hash)</span>
           )}
         </div>
-        <SettlementPanel bountyId={bountyId} initialVoucher={null} watch={true} />
+        <ErrorBoundary label="settlement tracker" resetKey={`settlement:${bountyId}`}>
+          <SettlementPanel key={bountyId} bountyId={bountyId} initialVoucher={null} watch={true} />
+        </ErrorBoundary>
+      </div>
+    );
+  }
+
+  if (alreadyClaimed) {
+    return (
+      <div>
+        <div className="notice warn" role="status">
+          <strong>This bounty already has a claim on NEAR.</strong>{" "}
+          <span className="muted small">
+            A previous submission landed — track its settlement below instead of submitting again.
+          </span>
+        </div>
+        <ErrorBoundary label="settlement tracker" resetKey={`settlement:${bountyId}`}>
+          <SettlementPanel key={bountyId} bountyId={bountyId} initialVoucher={null} watch={true} />
+        </ErrorBoundary>
       </div>
     );
   }
@@ -155,7 +208,7 @@ export default function ClaimForm({
   return (
     <div className="claim-flow">
       {bountyExpired && (
-        <div className="notice error">
+        <div className="notice error" role="alert">
           This bounty is past its deadline. The contract will reject new claims.
         </div>
       )}
@@ -182,6 +235,8 @@ export default function ClaimForm({
           onChange={(e) => setProofText(e.target.value)}
           placeholder='{"claimData": …} or {"claimInfo": …}'
           spellCheck={false}
+          aria-invalid={errors.length > 0}
+          aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
         />
       </label>
       <label className="field">
@@ -196,6 +251,8 @@ export default function ClaimForm({
             placeholder="0x…"
             autoComplete="off"
             spellCheck={false}
+            aria-invalid={errors.length > 0}
+            aria-describedby={errors.length > 0 ? "claim-errors" : undefined}
           />
           {facts && (
             <button type="button" className="suggest" onClick={() => setRecipient(facts.owner)}>
@@ -221,11 +278,27 @@ export default function ClaimForm({
       )}
 
       {errors.length > 0 && (
-        <ul className="errors">
+        <ul className="errors" id="claim-errors" role="alert">
           {errors.map((e, i) => (
             <li key={i}>{e}</li>
           ))}
         </ul>
+      )}
+      {failedTx && (
+        <p className="muted small">
+          Failed transaction:{" "}
+          <ExtLink href={nearTxUrl(config.networkId, failedTx)}>
+            <code>{shortenAddress(failedTx)} ↗</code>
+          </ExtLink>
+        </p>
+      )}
+      {shouldShowNearInitError(nearStatus, nearAccount) && (
+        <div className="notice error" role="alert">
+          NEAR wallet setup failed: {nearError}{" "}
+          <button type="button" onClick={retryNear}>
+            Retry setup
+          </button>
+        </div>
       )}
 
       <div className="row">
@@ -248,12 +321,12 @@ export default function ClaimForm({
         </div>
       )}
       {dryResult && (
-        <div className="notice ok">
+        <div className="notice ok" role="status">
           Dry-run passed: <code>{dryResult}</code>
         </div>
       )}
       {dryError && (
-        <div className="notice error">
+        <div className="notice error" role="alert">
           Dry-run failed: <code>{dryError}</code>
           <p className="muted small">
             The contract would reject this claim. Common causes: wrong PR, unmerged PR, stale

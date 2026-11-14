@@ -1,32 +1,78 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { BountyView } from "../lib/near";
-import { escrowBountyState } from "../lib/base";
+import type { BountyView, BountyViewV3 } from "../lib/near";
+import { escrowBountyState, escrowBountyStateV2 } from "../lib/base";
 import type { EscrowBountyState } from "../lib/base";
-import { bountyTitle, formatDateTime, formatUsdc, githubPrUrl, timeAgo } from "../lib/display.mjs";
+import { escrowReads } from "../lib/escrowPool.mjs";
+import { bountyTitleV3 } from "../lib/settlement.mjs";
+import {
+  bountyCardAmountText,
+  bountyCardPrUrl,
+  bountyCardSlotsText,
+  bountyMatchesQuery,
+  bountyTitle,
+  formatDateTime,
+  shortenAddress,
+  timeAgo,
+  v3EscrowCardState,
+} from "../lib/display.mjs";
 import { ExtLink, FundingPill, StatusPill } from "./ui";
+import ErrorBoundary from "./ErrorBoundary";
 
-function useEscrowState(bountyId: number): EscrowBountyState | null | "error" {
+function isV3(bounty: BountyView | BountyViewV3): bounty is BountyViewV3 {
+  return (bounty as BountyViewV3).criteria_hash !== undefined;
+}
+
+/// Typed view of the shared escrow-read pool (lib/escrowPool.mjs).
+interface EscrowReadPool {
+  run<T>(key: string, task: () => Promise<T>): { promise: Promise<T>; cancel: () => void };
+}
+
+const pool: EscrowReadPool = escrowReads;
+
+function useEscrowState(bounty: BountyView | BountyViewV3): EscrowBountyState | null | "error" {
   const [state, setState] = useState<EscrowBountyState | null | "error">(null);
   useEffect(() => {
     let live = true;
-    escrowBountyState(bountyId)
-      .then((s) => {
+    // Version routing by bounty shape; each reader additionally refuses
+    // to decode unless the deployed escrow probes as its version, so a
+    // mismatched configuration fails loud instead of mis-decoding.
+    // Reads run through the shared pool (bounded app-wide): identical
+    // in-flight reads are shared instead of duplicated, the rest queue,
+    // and unmounting frees the card's hold without disturbing other cards.
+    const v3 = isV3(bounty);
+    const task = v3
+      ? () =>
+          escrowBountyStateV2(bounty.id).then((s) => {
+            const mapped = v3EscrowCardState(s);
+            if (!mapped) throw new Error("malformed V2 escrow state");
+            return mapped;
+          })
+      : () => escrowBountyState(bounty.id);
+    const { promise, cancel } = pool.run(`v${v3 ? 2 : 1}:${bounty.id}`, task);
+    promise.then(
+      (s) => {
         if (live) setState(s);
-      })
-      .catch(() => {
+      },
+      () => {
         if (live) setState("error");
-      });
+      }
+    );
     return () => {
       live = false;
+      cancel();
     };
-  }, [bountyId]);
+  }, [bounty]);
   return state;
 }
 
-export function BountyCard({ bounty }: { bounty: BountyView }) {
-  const escrow = useEscrowState(bounty.id);
+export function BountyCard({ bounty }: { bounty: BountyView | BountyViewV3 }) {
+  const escrow = useEscrowState(bounty);
+  const v3 = isV3(bounty);
+  const amount = bountyCardAmountText(bounty);
+  const prUrl = bountyCardPrUrl(bounty);
+  const slots = bountyCardSlotsText(bounty);
   return (
     <article className="card bounty-card">
       <div className="card-top">
@@ -38,13 +84,22 @@ export function BountyCard({ bounty }: { bounty: BountyView }) {
         )}
       </div>
       <h3 className="bounty-title">
-        <a href={`/bounties/${bounty.id}`}>{bountyTitle(bounty)}</a>
+        <a href={`/bounties/${bounty.id}`}>{v3 ? bountyTitleV3(bounty) : bountyTitle(bounty)}</a>
       </h3>
-      <div className="bounty-amount">{formatUsdc(bounty.amount)} USDC</div>
+      <div className="bounty-amount">{amount !== null ? `${amount} USDC` : "Amount unavailable"}</div>
       <div className="card-meta">
         <span>#{bounty.id}</span>
         <span title={formatDateTime(bounty.created_at)}>{timeAgo(bounty.created_at)}</span>
-        <ExtLink href={githubPrUrl(bounty.repo, bounty.pr_number)}>View PR ↗</ExtLink>
+        {v3 ? (
+          <>
+            {slots !== null ? <span>{slots}</span> : null}
+            <span className="mono small" title={bounty.criteria_hash}>
+              {shortenAddress(bounty.criteria_hash)}
+            </span>
+          </>
+        ) : prUrl !== null ? (
+          <ExtLink href={prUrl}>View PR ↗</ExtLink>
+        ) : null}
       </div>
     </article>
   );
@@ -52,16 +107,14 @@ export function BountyCard({ bounty }: { bounty: BountyView }) {
 
 type StatusFilter = "all" | "open" | "pending" | "claimed";
 
-export default function Marketplace({ bounties }: { bounties: BountyView[] }) {
+export default function Marketplace({ bounties }: { bounties: (BountyView | BountyViewV3)[] }) {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<StatusFilter>("all");
 
   const q = query.trim().toLowerCase();
   const visible = bounties
     .filter((b) => (filter === "all" ? true : b.status === filter))
-    .filter((b) =>
-      q === "" ? true : b.repo.toLowerCase().includes(q) || String(b.id) === q || `#${b.id}` === q
-    )
+    .filter((b) => bountyMatchesQuery(b, q))
     .sort((a, b) => b.id - a.id);
 
   return (
@@ -93,11 +146,15 @@ export default function Marketplace({ bounties }: { bounties: BountyView[] }) {
           No bounties on the contract yet. Sponsors can create the first one from “New bounty”.
         </p>
       ) : visible.length === 0 ? (
-        <p className="muted">No bounties match this search.</p>
+        <p className="muted" role="status">
+          No bounties match this search.
+        </p>
       ) : (
         <div className="grid">
           {visible.map((b) => (
-            <BountyCard key={b.id} bounty={b} />
+            <ErrorBoundary key={b.id} label="bounty card" resetKey={`bounty-card:${b.id}`}>
+              <BountyCard bounty={b} />
+            </ErrorBoundary>
           ))}
         </div>
       )}
