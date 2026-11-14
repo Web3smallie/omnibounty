@@ -53,6 +53,25 @@ npm start       # daemon loop
 npm test        # unit + adversarial suite (mocked transports, no network)
 ```
 
+## Health endpoint (hosting as a web service)
+
+When `PORT` is set, daemon mode also serves `GET /health` (and `GET /`)
+on `0.0.0.0:$PORT`: HTTP 200 with process uptime, last poll timestamp /
+outcome, last error, loop staleness, and the redacted config summary.
+Unknown routes 404. Without `PORT`, or in `--once` mode, no listener
+starts and behavior is unchanged. `SIGTERM`/`SIGINT` stop scheduling new
+iterations, let an in-flight poll finish (bounded 25s grace), close the
+server, and exit 0; crash-safety still comes from the on-chain
+`usedVoucher` check, not from shutdown ordering.
+
+Render notes (verified against Render docs 2026-11-14): bind to the
+injected `PORT` (default 10000); a Free service spins down after 15 idle
+minutes and loses local filesystem changes on spin-down (harmless here —
+local state is a cache); set the dashboard health-check path to
+`/health` (unhealthy 4xx/5xx restarts a running instance, so the endpoint
+stays 200 and reports diagnostics in-body instead of flapping on RPC
+blips). No self-pinging: use an external monitor.
+
 ## Safety properties
 
 - Never submits a voucher that fails local validation (mirrors escrow checks).

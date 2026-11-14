@@ -21,6 +21,10 @@
 // Idempotency: a voucher is submitted only if (a) it validates, (b) it is
 // not in local state, and (c) the escrow reports it unused. A crash between
 // submission and recording is safe: the next poll re-checks (c) on-chain.
+//
+// Daemon mode also serves a liveness endpoint (see health.mjs) when PORT
+// is set, and handles SIGTERM/SIGINT with a bounded graceful shutdown.
+// Neither path is consulted by validation, discovery, or submission.
 import { ethers } from "ethers";
 import { NearRpc, NearSubmitter } from "./near.mjs";
 import { StateStore } from "./store.mjs";
@@ -33,6 +37,7 @@ import {
   isVoucherV2Shape,
 } from "./validate.mjs";
 import { loadConfig, summarize } from "./config.mjs";
+import { shouldStartServer, resolvePort, startHealthServer, createShutdownCoordinator } from "./health.mjs";
 
 const ESCROW_ABI_V1 = [
   "function usedVoucher(bytes32) view returns (bool)",
@@ -91,6 +96,30 @@ export class Relayer {
     this.store = store;
     this.submitter = submitter;
     this.log = log;
+    // Health/shutdown bookkeeping only; never consulted by validation,
+    // discovery, or submission logic.
+    this.health = { startedAt: new Date().toISOString(), lastPollAt: null, lastPollOk: null, lastError: null };
+    this.polling = false;
+    this.stopped = false;
+  }
+
+  // Liveness payload for the HTTP health endpoint. Uses the redacted
+  // config summary (never keys) and the last recorded poll outcome.
+  healthStatus() {
+    const intervalMs = Number(this.config.pollIntervalMs) || 30000;
+    const lastAt = this.health.lastPollAt ? Date.parse(this.health.lastPollAt) : null;
+    return {
+      status: "ok",
+      uptimeSec: Math.floor(process.uptime()),
+      startedAt: this.health.startedAt,
+      lastPollAt: this.health.lastPollAt,
+      lastPollOk: this.health.lastPollOk,
+      lastError: this.health.lastError,
+      polling: this.polling,
+      loopStale: lastAt === null ? false : Date.now() - lastAt > Math.max(3 * intervalMs, 5 * 60 * 1000),
+      pollIntervalMs: intervalMs,
+      config: summarize(this.config),
+    };
   }
 
   static async fromEnv() {
@@ -370,8 +399,27 @@ export class Relayer {
 
   async runForever() {
     this.log(`relayer starting: ${JSON.stringify(summarize(this.config))}`);
-    for (;;) {
-      await this.pollOnce();
+    while (!this.stopped) {
+      this.polling = true;
+      try {
+        const results = await this.pollOnce();
+        const failed = results.filter((r) => r.status === "poll-error");
+        this.health.lastPollAt = new Date().toISOString();
+        this.health.lastPollOk = failed.length === 0;
+        this.health.lastError = failed.length > 0 ? String(failed[0].error ?? "poll-error").slice(0, 300) : null;
+      } catch (e) {
+        // pollOnce is not supposed to throw (every known failure surfaces
+        // as a result status), but an unexpected throw must degrade to
+        // log-and-continue rather than take down the loop and the server.
+        const msg = e.message ?? String(e);
+        this.health.lastPollAt = new Date().toISOString();
+        this.health.lastPollOk = false;
+        this.health.lastError = String(msg).slice(0, 300);
+        this.log(`poll iteration threw: ${String(msg).slice(0, 300)}`);
+      } finally {
+        this.polling = false;
+      }
+      if (this.stopped) break;
       await sleep(this.config.pollIntervalMs);
     }
   }
@@ -384,6 +432,27 @@ if (process.argv[1]?.endsWith("index.mjs")) {
     const results = await relayer.pollOnce();
     console.log(JSON.stringify(results, null, 2));
   } else {
+    let server = null;
+    if (shouldStartServer()) {
+      const started = await startHealthServer({
+        port: resolvePort(),
+        getStatus: () => relayer.healthStatus(),
+        log: (m) => relayer.log(m),
+      });
+      server = started.server;
+    }
+    const shutdown = createShutdownCoordinator({
+      isPolling: () => relayer.polling,
+      onStop: () => {
+        relayer.stopped = true;
+      },
+      closeServer: () => {
+        if (server) server.close();
+      },
+      exit: (code) => process.exit(code),
+    });
+    process.on("SIGTERM", () => shutdown.onSignal("SIGTERM"));
+    process.on("SIGINT", () => shutdown.onSignal("SIGINT"));
     await relayer.runForever();
   }
 }
